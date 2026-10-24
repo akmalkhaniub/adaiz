@@ -1,0 +1,29 @@
+name: AdAiz Eval-Gated CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-and-4-gate-evals:
+    name: Stage 1 (Pytest Contracts & Security) + Stage 2 (4-Gate Agent Evaluation Suite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install uv & Python 3.13
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Stage 1 — Run Deterministic Unit, Security, SQLite & FastAPI Contract Tests
+        run: uv run pytest -v
+
+      - name: Stage 2 — Run 4-Gate Agent Evaluation, Chaos Recovery & Red-Team Regression Gate
+        run: uv run python -m evals.run_evals

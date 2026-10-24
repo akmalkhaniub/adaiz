@@ -1,0 +1,23 @@
+[project]
+name = "adaiz"
+version = "1.0.0"
+description = "AdAiz — Enterprise Agentic Advertising Platform (LangGraph + AdCP + MCP + Agent Harness + 4-Gate Evals)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.10.0",
+    "langgraph>=0.3.0",
+    "langchain-core>=0.3.30",
+    "httpx>=0.28.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

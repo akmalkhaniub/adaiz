@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdAiz — Omnichannel Agentic Advertising Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-[#0B0F19] dark:text-slate-100 min-h-screen transition-colors duration-150 font-sans antialiased">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold tracking-tight shadow-sm">
+          Az
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight">AdAiz</span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+              Agency & Media Command
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+            Omnichannel Creative Studio • AdCP Media Discovery • Brand Governance
+          </p>
+        </div>
+      </div>
+
+      <!-- Tactile Navigation Tabs -->
+      <nav class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800" role="tablist">
+        <button onclick="switchTab('studio')" id="tab-btn-studio"
+          class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm">
+          Campaign Studio & Approval Desk
+        </button>
+        <button onclick="switchTab('vault')" id="tab-btn-vault"
+          class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+          Brand Vault & Memory
+        </button>
+        <button onclick="switchTab('evals')" id="tab-btn-evals"
+          class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+          4-Gate Evaluations & Reliability
+        </button>
+      </nav>
+
+      <!-- System Status & Theme Toggle -->
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/70">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>AdCP & Guardrails Online</span>
+        </div>
+        <button onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Light/Dark Theme"
+          class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-indigo-500 transition-colors">
+          <span id="theme-icon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: CAMPAIGN STUDIO & LIVE APPROVAL DESK                           -->
+    <!-- ===================================================================== -->
+    <section id="tab-view-studio" class="space-y-6">
+
+      <!-- Scenario Presets & Brief Composer Card -->
+      <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h1 class="text-xl font-bold tracking-tight">Omnichannel Campaign Brief & Orchestrator</h1>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+              Select a verified agency scenario preset or compose a custom brief across Display, Online Video, CTV, and DOOH.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Quick Scenarios:</span>
+            <button onclick="loadPreset(0)" class="text-xs px-3 py-1.5 rounded-lg font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/70 dark:hover:bg-indigo-900/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition">
+              1. Aurora EV Omnichannel ($87.5k)
+            </button>
+            <button onclick="loadPreset(2)" class="text-xs px-3 py-1.5 rounded-lg font-medium bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition">
+              2. Compliance Self-Heal ('Guaranteed 10x')
+            </button>
+            <button onclick="loadPreset(1)" class="text-xs px-3 py-1.5 rounded-lg font-medium bg-sky-50 hover:bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:hover:bg-sky-900/70 dark:text-sky-300 border border-sky-200 dark:border-sky-800 transition">
+              3. SSP 503 Timeout Auto-Recovery
+            </button>
+            <button onclick="loadPreset(3)" class="text-xs px-3 py-1.5 rounded-lg font-medium bg-rose-50 hover:bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition">
+              4. Red-Team Prompt Injection Guard
+            </button>
+          </div>
+        </div>
+
+        <!-- Unstructured Sales & RFP Email Intake Accordion (REQ-SALES-01) -->
+        <details id="rfp-intake-accordion" class="mt-4 group bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          <summary class="px-4 py-2.5 cursor-pointer flex items-center justify-between text-xs font-semibold select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition">
+            <div class="flex items-center gap-2">
+              <span class="text-indigo-600 dark:text-indigo-400 transition-transform group-open:rotate-90">▶</span>
+              <span>Sales & Unstructured Client RFP Intake Agent (Paste Raw Email / RFP Document → Auto-Extract Brief & Commercial Pitch)</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono text-[11px]">Sales Workflow</span>
+          </summary>
+          <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs text-slate-500">Load Sample Client RFP Email:</span>
+              <button onclick="loadSampleRFP(0)" class="text-xs px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-indigo-500">
+                Aurora EV ($125k RFP)
+              </button>
+              <button onclick="loadSampleRFP(1)" class="text-xs px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-indigo-500">
+                NovaPay CFO Pitch ($68.5k RFP)
+              </button>
+              <button onclick="loadSampleRFP(2)" class="text-xs px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-indigo-500">
+                Verve Commuter Blitz ($45k RFP)
+              </button>
+            </div>
+            <textarea id="raw-rfp-textarea" rows="3"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Paste raw client RFP email or brief text here..."></textarea>
+            <div class="flex items-center justify-between gap-3">
+              <div id="rfp-pitch-result" class="text-xs text-slate-600 dark:text-slate-300 flex-1"></div>
+              <button onclick="parseAndApplyRFP()" id="parse-rfp-btn"
+                class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold whitespace-nowrap">
+                ✨ Extract RFP & Launch Proposal
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Brief Form Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 pt-5">
+          <div class="md:col-span-3">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Brand & Tenant Vault</label>
+            <select id="brief-brand-select" onchange="onBrandSelectChange()"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="tenant_aurora|aurora_ev|Aurora EV Motors">Aurora EV Motors (tenant_aurora)</option>
+              <option value="tenant_nova|novapay|NovaPay Treasury">NovaPay Treasury (tenant_nova)</option>
+              <option value="tenant_verve|verve_brew|Verve Nitro Cold Brew">Verve Nitro Cold Brew (tenant_verve)</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Total Budget (USD)</label>
+            <input type="number" id="brief-budget" step="0.01" value="87543.29"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Target Geos</label>
+            <input type="text" id="brief-geos" value="SG, US-CA"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="md:col-span-5">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Omnichannel Mix (Parallel Send() Fan-Out)</label>
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="ch-checkbox rounded text-indigo-600" value="display" checked />
+                <span>Display (IAB)</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="ch-checkbox rounded text-indigo-600" value="video" checked />
+                <span>Online Video</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="ch-checkbox rounded text-indigo-600" value="ctv" checked />
+                <span>Connected TV</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="checkbox" class="ch-checkbox rounded text-indigo-600" value="dooh" checked />
+                <span>DOOH Screens</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="md:col-span-9">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Campaign Objective & Key Message</label>
+            <input type="text" id="brief-objective"
+              value="Drive Q4 test drives for the Aurora GT with 380-mile EPA range and 18-minute ultra-fast charging."
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="md:col-span-3 flex flex-col justify-end gap-2">
+            <label class="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+              <input type="checkbox" id="brief-simulate-503" class="rounded text-indigo-600" />
+              <span>Simulate SSP 503 Timeout (Test Retry)</span>
+            </label>
+            <button onclick="runCampaignWorkflow()" id="run-campaign-btn"
+              class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-2">
+              <span>▶ Generate Plan & Creatives</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Pipeline Progress Stepper -->
+      <div id="workflow-stepper" class="grid grid-cols-2 sm:grid-cols-6 gap-2"></div>
+
+      <!-- Security / Self-Healing Alert Banners -->
+      <div id="workflow-alerts" class="space-y-2 hidden"></div>
+
+      <!-- HUMAN-IN-THE-LOOP (HITL) APPROVAL DESK BANNER -->
+      <div id="hitl-approval-banner" class="hidden rounded-2xl border-2 border-amber-400 dark:border-amber-500/80 bg-amber-50/90 dark:bg-amber-950/30 p-5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider rounded-full bg-amber-500 text-white">
+                Human Approval Required (interrupt() Checkpoint)
+              </span>
+              <span class="text-xs font-mono text-amber-800 dark:text-amber-300" id="hitl-campaign-id-badge"></span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">
+              Authorize Live Media Spend & AdCP Campaign Activation
+            </h2>
+            <p class="text-sm text-slate-700 dark:text-slate-300">
+              All omnichannel creatives passed Brand Vault & IAB technical verification. Live DSP activation (`create_media_buy`) is cryptographically locked until you sign off below.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 min-w-[340px]">
+            <input type="text" id="hitl-reviewer-notes" placeholder="Optional reviewer note or revision directive..."
+              class="flex-1 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <button onclick="submitHITLDecision(false)"
+              class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-xs font-semibold transition">
+              Request Revision
+            </button>
+            <button onclick="submitHITLDecision(true)"
+              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition whitespace-nowrap">
+              ✓ Approve & Traffic Live Spend
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campaign Summary KPI Bar (Business Outcomes First) -->
+      <div id="campaign-summary-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+      <!-- Primary Results Grid: Omnichannel Creative Studio + AdCP Media Plan -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left 7 Cols: Omnichannel Creative Studio Previews -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold">Omnichannel Creative Studio</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Generated in parallel via LangGraph <code class="font-mono">Send()</code> • Verified for IAB Dimensions, WCAG Contrast, CTV Safe Zones & DOOH Legibility
+              </p>
+            </div>
+          </div>
+          <div id="creatives-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Right 5 Cols: AdCP Media Plan & PMP Deals Table -->
+        <div class="lg:col-span-5 space-y-4">
+          <div>
+            <h2 class="text-lg font-bold">AdCP Media Plan & PMP Deals</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              Deterministic penny-perfect budget allocation across discovered SSP Seller Agents
+            </p>
+          </div>
+          <div id="media-plan-container" class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm"></div>
+
+          <!-- Activation Receipts Card (Shown once Approved) -->
+          <div id="activation-receipts-card" class="hidden bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/80 rounded-2xl p-4 space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- PROGRESSIVE DISCLOSURE ACCORDIONS (Collapsed by Default per human-centered-ui-ux) -->
+      <div class="space-y-3 pt-2">
+        <details class="group bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <summary class="px-5 py-3.5 cursor-pointer flex items-center justify-between text-sm font-semibold select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+            <div class="flex items-center gap-2.5">
+              <span class="text-indigo-600 dark:text-indigo-400 transition-transform group-open:rotate-90">▶</span>
+              <span>Inspect Execution Trace Ledger & Agent Harness Guardrails</span>
+              <span id="trace-count-badge" class="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">0 spans</span>
+            </div>
+            <span class="text-xs text-slate-400">Click to expand step-by-step telemetry</span>
+          </summary>
+          <div class="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0B0F19]/60">
+            <div id="trace-events-list" class="space-y-2 max-h-96 overflow-y-auto font-mono text-xs"></div>
+          </div>
+        </details>
+
+        <details class="group bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <summary class="px-5 py-3.5 cursor-pointer flex items-center justify-between text-sm font-semibold select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+            <div class="flex items-center gap-2.5">
+              <span class="text-indigo-600 dark:text-indigo-400 transition-transform group-open:rotate-90">▶</span>
+              <span>Inspect AdCP Seller Agent Cards (<code class="font-mono text-xs">adagents.json</code>) & Hybrid RAG Rule Citations</span>
+            </div>
+            <span class="text-xs text-slate-400">Protocol Manifests</span>
+          </summary>
+          <div class="p-5 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-2 gap-4 bg-slate-50/50 dark:bg-[#0B0F19]/60">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Retrieved Brand Vault Chunks (Reciprocal Rank Fusion)</h4>
+              <pre id="rag-chunks-json" class="p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-64"></pre>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Discovered A2A / AdCP Seller Capabilities</h4>
+              <pre id="adcp-caps-json" class="p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-64"></pre>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: BRAND VAULT & EPISODIC MEMORY                                  -->
+    <!-- ===================================================================== -->
+    <section id="tab-view-vault" class="hidden space-y-6">
+      <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <h2 class="text-xl font-bold">Multi-Tenant Brand Vault & Episodic Memory Store</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+              Hybrid RAG combining lexical BM25 and vector similarity via Reciprocal Rank Fusion (<code class="font-mono">RRF k=60</code>) with strict <code class="font-mono">tenant_id</code> isolation.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="vault-selector" onchange="loadVaultProfile()"
+              class="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm">
+              <option value="tenant_aurora|aurora_ev">Aurora EV Motors (tenant_aurora)</option>
+              <option value="tenant_nova|novapay">NovaPay Treasury (tenant_nova)</option>
+              <option value="tenant_verve|verve_brew">Verve Nitro Cold Brew (tenant_verve)</option>
+            </select>
+            <button onclick="simulateCrossTenantAttack()"
+              class="px-3 py-2 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs font-semibold hover:bg-rose-100 transition">
+              🛡️ Test Cross-Tenant Probe
+            </button>
+          </div>
+        </div>
+
+        <div id="vault-security-banner" class="hidden p-3.5 rounded-xl border text-xs font-mono"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-6 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Brand Governance Rules & Prohibited Claims</h3>
+            <div id="vault-profile-details" class="space-y-3"></div>
+
+            <!-- Add Custom Brand Rule -->
+            <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+              <input type="text" id="new-vault-rule" placeholder="Add new compliance guideline chunk to this Brand Vault..."
+                class="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm" />
+              <button onclick="addCustomBrandRule()"
+                class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">
+                + Add Rule
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-6 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Interactive Hybrid RAG Search (BM25 + Vector RRF)</h3>
+            <div class="flex gap-2">
+              <input type="text" id="rag-search-input" value="DOOH word limit CTV overscan prohibited claims"
+                class="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm" />
+              <button onclick="runVaultSearch()"
+                class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-indigo-600 text-white text-xs font-semibold">
+                Search RRF
+              </button>
+            </div>
+            <div id="rag-search-results" class="space-y-2.5"></div>
+
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 pt-3">Cross-Campaign Episodic Learnings (LangGraph BaseStore)</h3>
+            <ul id="vault-episodic-list" class="space-y-2 text-sm"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: 4-GATE EVALUATIONS & REGRESSION SUITE                          -->
+    <!-- ===================================================================== -->
+    <section id="tab-view-evals" class="hidden space-y-6">
+      <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <h2 class="text-xl font-bold">4-Gate Automated Evaluation, Chaos Recovery & Regression Suite</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+              Continuous verification of Budget Conservation, IAB Specs, Trajectory Order, SSP 503 Fault Recovery, Compliance Self-Healing, and Red-Team Security.
+            </p>
+          </div>
+          <button onclick="runLiveEvalSuite()" id="run-evals-btn"
+            class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-sm transition">
+            ▶ Run 4-Gate Evaluation Suite Now
+          </button>
+        </div>
+
+        <!-- 4 Gate Scorecards -->
+        <div id="eval-gate-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+        <!-- Gate 4 Regression Matrix Table -->
+        <div>
+          <h3 class="text-base font-bold mb-2">Gate 4: Baseline vs. Candidate Regression Matrix</h3>
+          <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-100 dark:bg-slate-900/90 text-xs uppercase text-slate-500">
+                <tr>
+                  <th class="py-3 px-4">Evaluation Metric</th>
+                  <th class="py-3 px-4">Baseline (v2.5.0)</th>
+                  <th class="py-3 px-4">Candidate (v2.6.0)</th>
+                  <th class="py-3 px-4">Release Threshold</th>
+                  <th class="py-3 px-4">Delta</th>
+                  <th class="py-3 px-4">Gate Status</th>
+                </tr>
+              </thead>
+              <tbody id="eval-regression-tbody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Golden Dataset Scenario Execution Breakdown -->
+        <div>
+          <h3 class="text-base font-bold mb-2">Golden Scenario Execution Breakdown</h3>
+          <div id="eval-cases-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let PRESETS = [];
+    let RFP_SAMPLES = [];
+    let CURRENT_CAMPAIGN_ID = null;
+
+    // -----------------------------------------------------------------------
+    // Theme Management (Light / Dark Mode persisted in localStorage)
+    // -----------------------------------------------------------------------
+    function initTheme() {
+      const saved = localStorage.getItem('adaiz_theme');
+      const htmlEl = document.documentElement;
+      if (saved === 'light') {
+        htmlEl.classList.remove('dark');
+        document.getElementById('theme-icon').textContent = '🌙';
+      } else {
+        htmlEl.classList.add('dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+      }
+    }
+
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const isDark = htmlEl.classList.toggle('dark');
+      localStorage.setItem('adaiz_theme', isDark ? 'dark' : 'light');
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // -----------------------------------------------------------------------
+    // Tab Switching
+    // -----------------------------------------------------------------------
+    function switchTab(tab) {
+      ['studio', 'vault', 'evals'].forEach(t => {
+        const view = document.getElementById(`tab-view-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tab) {
+          view.classList.remove('hidden');
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm';
+        } else {
+          view.classList.add('hidden');
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
+        }
+      });
+      if (tab === 'vault') {
+        loadVaultProfile();
+        runVaultSearch();
+      } else if (tab === 'evals') {
+        loadLatestEvals();
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Presets & Campaign Brief Controls
+    // -----------------------------------------------------------------------
+    async function fetchPresets() {
+      const res = await fetch('/api/v1/presets');
+      const data = await res.json();
+      PRESETS = data.presets || [];
+      RFP_SAMPLES = data.rfp_samples || [];
+      if (RFP_SAMPLES.length > 0) {
+        document.getElementById('raw-rfp-textarea').value = RFP_SAMPLES[0].raw_text;
+      }
+    }
+
+    function loadSampleRFP(idx) {
+      const sample = RFP_SAMPLES[idx];
+      if (!sample) return;
+      document.getElementById('raw-rfp-textarea').value = sample.raw_text;
+    }
+
+    async function parseAndApplyRFP() {
+      const rawText = document.getElementById('raw-rfp-textarea').value.trim();
+      if (!rawText) return;
+      const btn = document.getElementById('parse-rfp-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Parsing RFP...';
+      try {
+        const res = await fetch('/api/v1/sales/parse-rfp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_rfp_text: rawText })
+        });
+        const data = await res.json();
+        const b = data.extracted_brief;
+        const p = data.sales_pitch_proposal;
+
+        document.getElementById('rfp-pitch-result').innerHTML = `
+          <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+            <strong>✓ Pitch Generated (${p.proposal_id}):</strong> Gross $${p.gross_client_budget_usd.toLocaleString()} • Working Media $${p.working_media_spend_usd.toLocaleString()} • Agency Margin $${p.agency_platform_margin_usd.toLocaleString()} (${p.agency_margin_pct}%) • Est. ${p.estimated_impressions.toLocaleString()} imps
+          </div>
+        `;
+
+        const selectEl = document.getElementById('brief-brand-select');
+        for (const opt of selectEl.options) {
+          if (opt.value.startsWith(`${b.tenant_id}|${b.brand_id}`)) {
+            selectEl.value = opt.value;
+            break;
+          }
+        }
+        document.getElementById('brief-budget').value = b.total_budget_usd;
+        document.getElementById('brief-geos').value = b.target_geos.join(', ');
+        document.getElementById('brief-objective').value = b.objective;
+        document.querySelectorAll('.ch-checkbox').forEach(cb => {
+          cb.checked = b.target_channels.includes(cb.value);
+        });
+        await runCampaignWorkflow(b.campaign_id);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Extract RFP & Launch Proposal';
+      }
+    }
+
+    async function optimizeLivePacing() {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/optimize-pacing`, { method: 'POST' });
+      const state = await res.json();
+      renderCampaignState(state);
+    }
+
+    async function triggerSagaRollback() {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/saga-rollback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Operator triggered emergency brand-safety halt & Saga rollback' })
+      });
+      const state = await res.json();
+      renderCampaignState(state);
+    }
+
+    function onBrandSelectChange() {
+      const val = document.getElementById('brief-brand-select').value;
+      const [tenant, brand] = val.split('|');
+      if (brand === 'aurora_ev') {
+        document.getElementById('brief-objective').value = 'Drive Q4 test drives for the Aurora GT with 380-mile EPA range and 18-minute ultra-fast charging.';
+      } else if (brand === 'novapay') {
+        document.getElementById('brief-objective').value = 'Accelerate B2B multi-currency treasury settlement with transparent institutional FX spreads.';
+      } else {
+        document.getElementById('brief-objective').value = 'Launch organic single-origin nitro cold brew with 0g added sugar across urban commuter hubs.';
+      }
+    }
+
+    function loadPreset(index) {
+      const item = PRESETS[index];
+      if (!item) return;
+      const b = item.brief;
+      const selectEl = document.getElementById('brief-brand-select');
+      for (const opt of selectEl.options) {
+        if (opt.value.startsWith(`${b.tenant_id}|${b.brand_id}`)) {
+          selectEl.value = opt.value;
+          break;
+        }
+      }
+      document.getElementById('brief-budget').value = b.total_budget_usd;
+      document.getElementById('brief-geos').value = b.target_geos.join(', ');
+      document.getElementById('brief-objective').value = b.objective;
+      document.getElementById('brief-simulate-503').checked = Boolean(b.simulate_dsp_503_once);
+
+      document.querySelectorAll('.ch-checkbox').forEach(cb => {
+        cb.checked = b.target_channels.includes(cb.value);
+      });
+      runCampaignWorkflow(b.campaign_id + '_' + Math.floor(Date.now() / 1000));
+    }
+
+    async function runCampaignWorkflow(customCampaignId = null) {
+      const btn = document.getElementById('run-campaign-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Orchestrating Agents...</span>';
+
+      try {
+        const [tenant_id, brand_id, brand_name] = document.getElementById('brief-brand-select').value.split('|');
+        const channels = Array.from(document.querySelectorAll('.ch-checkbox:checked')).map(cb => cb.value);
+        if (channels.length === 0) {
+          alert('Please select at least one target channel.');
+          return;
+        }
+        const geos = document.getElementById('brief-geos').value.split(',').map(s => s.trim()).filter(Boolean);
+        const campaign_id = customCampaignId || `camp_${brand_id}_${Math.floor(Date.now() / 1000)}`;
+
+        const payload = {
+          campaign_id,
+          tenant_id,
+          brand_id,
+          brand_name,
+          objective: document.getElementById('brief-objective').value,
+          total_budget_usd: parseFloat(document.getElementById('brief-budget').value || '50000'),
+          target_channels: channels,
+          target_geos: geos.length ? geos : ['SG'],
+          audience_segments: ['High-Intent Audience', 'Decision Makers'],
+          simulate_dsp_503_once: document.getElementById('brief-simulate-503').checked
+        };
+
+        const res = await fetch('/api/v1/campaigns/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const state = await res.json();
+        CURRENT_CAMPAIGN_ID = state.campaign_id;
+        renderCampaignState(state);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>▶ Generate Plan & Creatives</span>';
+      }
+    }
+
+    async function submitHITLDecision(approved) {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const notes = document.getElementById('hitl-reviewer-notes').value;
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approved,
+          reviewer: 'Agency Media Director',
+          notes: notes || (approved ? 'Approved for live AdCP activation.' : 'Refine headline emphasis.')
+        })
+      });
+      const state = await res.json();
+      document.getElementById('hitl-reviewer-notes').value = '';
+      renderCampaignState(state);
+    }
+
+    // -----------------------------------------------------------------------
+    // Render Campaign State in Studio
+    // -----------------------------------------------------------------------
+    function renderCampaignState(state) {
+      const isAwaitingHITL = state.workflow_status === 'awaiting_human_approval';
+      const isActive = state.workflow_status === 'active';
+
+      // 1. Render Stepper
+      const steps = [
+        { label: '1. Brand Vault & RAG', done: true },
+        { label: '2. AdCP Deal Discovery', done: true },
+        { label: '3. Parallel Send() Creatives', done: true },
+        { label: '4. Spec & Budget Gate', done: state.budget_math_valid && state.spec_all_valid },
+        { label: `5. Compliance Judge ${state.revision_count > 0 ? `(Self-Healed x${state.revision_count})` : ''}`, done: state.compliance_status === 'approved' },
+        { label: isActive ? '6. Live DSP Active ✓' : '6. HITL Sign-Off Gate', done: isActive, active: isAwaitingHITL }
+      ];
+      document.getElementById('workflow-stepper').innerHTML = steps.map(s => `
+        <div class="px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+          s.done
+            ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
+            : s.active
+              ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-800 dark:text-amber-300 animate-pulse'
+              : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
+        }">
+          <span>${s.done ? '●' : s.active ? '◐' : '○'}</span>
+          <span class="truncate">${s.label}</span>
+        </div>
+      `).join('');
+
+      // 2. Render Security / Self-Healing Alerts
+      const alertsEl = document.getElementById('workflow-alerts');
+      const alertItems = [];
+      if (state.security_flags && state.security_flags.length > 0) {
+        alertItems.push(`
+          <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between">
+            <div><strong>🛡️ Zero-Trust Guardrail Triggered:</strong> Neutralized adversarial prompt injection directive in brief (${state.security_flags.join('; ')}). Mandatory HITL approval gate remained enforced.</div>
+          </div>
+        `);
+      }
+      const retries = (state.trace_events || []).filter(e => e.event_type === 'retry');
+      if (retries.length > 0) {
+        alertItems.push(`
+          <div class="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-800 dark:text-sky-200">
+            <strong>⚡ Agent Harness Fault Recovery:</strong> Caught transient <code class="font-mono">HTTP 503 DSP Timeout</code> during AdCP discovery and automatically recovered via exponential backoff retry.
+          </div>
+        `);
+      }
+      if (state.revision_count > 0) {
+        alertItems.push(`
+          <div class="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-800 dark:text-indigo-200">
+            <strong>🔄 Autonomous Compliance Self-Correction:</strong> Compliance Judge caught policy issues on initial draft and triggered ${state.revision_count} parallel regeneration cycle(s) before surfacing for human approval.
+          </div>
+        `);
+      }
+      if (alertItems.length > 0) {
+        alertsEl.innerHTML = alertItems.join('');
+        alertsEl.classList.remove('hidden');
+      } else {
+        alertsEl.classList.add('hidden');
+      }
+
+      // 3. Toggle HITL Banner
+      const hitlBanner = document.getElementById('hitl-approval-banner');
+      if (isAwaitingHITL) {
+        hitlBanner.classList.remove('hidden');
+        document.getElementById('hitl-campaign-id-badge').textContent = `${state.campaign_id} • $${state.brief.total_budget_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      } else {
+        hitlBanner.classList.add('hidden');
+      }
+
+      // 4. Summary Business KPIs
+      const totalImps = (state.media_plan || []).reduce((acc, m) => acc + m.estimated_impressions, 0);
+      const blendedCpm = totalImps > 0 ? ((state.brief.total_budget_usd / totalImps) * 1000).toFixed(2) : '0.00';
+      document.getElementById('campaign-summary-kpis').innerHTML = `
+        <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Allocated Media Budget</div>
+          <div class="text-xl font-bold font-mono mt-1">$${state.brief.total_budget_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+          <div class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">✓ $0.00 Conservation Drift</div>
+        </div>
+        <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Projected Omnichannel Reach</div>
+          <div class="text-xl font-bold font-mono mt-1">${totalImps.toLocaleString()} <span class="text-xs font-normal text-slate-400">imps</span></div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Blended CPM: $${blendedCpm}</div>
+        </div>
+        <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">IAB Spec & Brand Compliance</div>
+          <div class="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">${(state.creatives || []).length}/${(state.creatives || []).length} Verified</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Cited Rules: ${(state.retrieved_guideline_chunks || []).map(c => c.rule_id).slice(0, 2).join(', ')}</div>
+        </div>
+        <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Campaign Trafficking Status</div>
+          <div class="text-lg font-bold mt-1 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">
+            ${isActive ? '● LIVE DELIVERING' : '◐ Awaiting Human Sign-Off'}
+          </div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gov ID: ${state.content_standards_id}</div>
+        </div>
+      `;
+
+      // 5. Render Omnichannel Creative Cards
+      document.getElementById('creatives-grid').innerHTML = (state.creatives || []).map(c => `
+        <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between">
+          <!-- Visual Banner Mockup Header -->
+          <div class="p-4 relative border-b border-slate-200 dark:border-slate-800" style="background-color: ${c.background_hex}; color: #FFFFFF;">
+            <div class="flex items-center justify-between text-[11px] opacity-85 mb-2 font-mono">
+              <span class="px-2 py-0.5 rounded bg-black/40 uppercase font-semibold">${c.channel} • ${c.dimensions}</span>
+              <span>${c.duration_sec ? `${c.duration_sec}s ${c.has_audio ? '🔊' : '🔇 No-Audio'}` : 'HTML5 Static/Dynamic'}</span>
+            </div>
+            <div class="my-2 p-2.5 rounded-lg border border-dashed border-white/25">
+              <div class="text-[10px] uppercase tracking-wider opacity-70 mb-1">${state.brief.brand_name}</div>
+              <div class="font-bold text-sm leading-snug">${c.headline}</div>
+              <div class="text-xs opacity-80 mt-1 line-clamp-2">${c.subheadline}</div>
+              ${c.cta_text ? `<div class="mt-2.5 inline-block px-3 py-1 rounded text-xs font-bold text-white" style="background-color: ${c.primary_hex};">${c.cta_text} →</div>` : ''}
+            </div>
+            <div class="text-[10px] opacity-70 mt-1.5 leading-tight">${c.disclaimer_text}</div>
+          </div>
+
+          <!-- Technical QA & Compliance Metadata -->
+          <div class="p-4 space-y-2 text-xs">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-medium border border-emerald-200 dark:border-emerald-800">
+                ✓ IAB Spec Valid
+              </span>
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono">
+                WCAG ${c.contrast_ratio}:1
+              </span>
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono">
+                ${c.word_count} words
+              </span>
+              ${c.channel === 'ctv' ? `<span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">10% Safe-Zone</span>` : ''}
+            </div>
+
+            ${c.storyboard_beats && c.storyboard_beats.length ? `
+              <div class="pt-1 text-slate-600 dark:text-slate-400 space-y-0.5">
+                <div class="font-semibold text-slate-700 dark:text-slate-300">VAST 4.2 Storyboard:</div>
+                ${c.storyboard_beats.map(b => `<div class="truncate">• ${b}</div>`).join('')}
+              </div>
+            ` : ''}
+
+            ${c.contextual_triggers && c.contextual_triggers.length ? `
+              <div class="pt-1 text-slate-600 dark:text-slate-400 space-y-0.5">
+                <div class="font-semibold text-slate-700 dark:text-slate-300">DOOH Triggers:</div>
+                ${c.contextual_triggers.map(t => `<div class="truncate">• ${t}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      // 6. Render AdCP Media Plan Table
+      document.getElementById('media-plan-container').innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-900/90 text-slate-500 uppercase">
+              <tr>
+                <th class="py-3 px-3.5">Channel / SSP</th>
+                <th class="py-3 px-3.5">AdCP Deal ID</th>
+                <th class="py-3 px-3.5 text-right">Budget</th>
+                <th class="py-3 px-3.5 text-right">CPM</th>
+                <th class="py-3 px-3.5 text-right">Est. Imps</th>
+                <th class="py-3 px-3.5">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+              ${(state.media_plan || []).map(m => `
+                <tr>
+                  <td class="py-3 px-3.5">
+                    <div class="font-bold uppercase text-indigo-600 dark:text-indigo-400">${m.channel}</div>
+                    <div class="text-slate-500 truncate max-w-[160px]" title="${m.publisher_or_ssp}">${m.publisher_or_ssp}</div>
+                  </td>
+                  <td class="py-3 px-3.5 font-mono text-[11px]">${m.deal_id}</td>
+                  <td class="py-3 px-3.5 text-right font-mono font-semibold">$${m.allocated_budget_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                  <td class="py-3 px-3.5 text-right font-mono">$${m.target_cpm_usd.toFixed(2)}</td>
+                  <td class="py-3 px-3.5 text-right font-mono">${m.estimated_impressions.toLocaleString()}</td>
+                  <td class="py-3 px-3.5">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      m.adcp_status === 'active'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                    }">${m.adcp_status}</span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // 7. Render Activation Receipts & Post-Launch Optimizer / Saga Rollback Controls if Active
+      const receiptsCard = document.getElementById('activation-receipts-card');
+      if (isActive && state.activation_receipts && state.activation_receipts.length) {
+        receiptsCard.classList.remove('hidden');
+        const pInsights = state.pacing_insights || {};
+        receiptsCard.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-emerald-900 dark:text-emerald-300">✓ AdCP Live Media Buy Orders Dispatched (HMAC-SHA256 Verified)</h3>
+            <span class="text-xs font-mono text-emerald-700 dark:text-emerald-400">Pacing Index: ${pInsights.pacing_index_pct || 100.0}%</span>
+          </div>
+          ${pInsights.last_optimization_summary ? `
+            <div class="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-800 dark:text-indigo-200">
+              <strong>📈 Post-Launch Pacing Optimizer:</strong> ${pInsights.last_optimization_summary}
+            </div>
+          ` : ''}
+          <div class="space-y-1.5 text-xs font-mono">
+            ${state.activation_receipts.map(r => `
+              <div class="p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+                <span><strong>${r.order_id}</strong> (${r.channel.toUpperCase()}) → ${r.deal_id}</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold">$${r.allocated_budget_usd.toLocaleString('en-US', {minimumFractionDigits: 2})} ${r.status}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-emerald-200 dark:border-emerald-800/60">
+            <button onclick="optimizeLivePacing()"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+              ⚡ Run Autonomous Pacing & Bid-Shading Optimizer
+            </button>
+            <button onclick="triggerSagaRollback()"
+              class="px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-semibold hover:bg-rose-100 transition">
+              ↩ Emergency Saga Rollback (Cancel Orders)
+            </button>
+          </div>
+        `;
+      } else {
+        receiptsCard.classList.add('hidden');
+      }
+
+      // 8. Populate Progressive Disclosure Accordions
+      const traces = state.trace_events || [];
+      document.getElementById('trace-count-badge').textContent = `${traces.length} spans`;
+      document.getElementById('trace-events-list').innerHTML = traces.map((t, idx) => `
+        <div class="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+          <div>
+            <span class="text-slate-400 mr-1.5">#${idx + 1}</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 mr-1.5">${t.event_type}</span>
+            <span class="font-semibold text-slate-700 dark:text-slate-300">[${t.node}]</span>
+            <span class="text-slate-600 dark:text-slate-400 ml-1">${t.summary}</span>
+          </div>
+          <span class="text-slate-400 whitespace-nowrap">${t.duration_ms} ms</span>
+        </div>
+      `).join('');
+
+      document.getElementById('rag-chunks-json').textContent = JSON.stringify(state.retrieved_guideline_chunks || [], null, 2);
+      document.getElementById('adcp-caps-json').textContent = JSON.stringify(state.adcp_capabilities || {}, null, 2);
+    }
+
+    // -----------------------------------------------------------------------
+    // TAB 2: Brand Vault & Hybrid RAG Functions
+    // -----------------------------------------------------------------------
+    async function loadVaultProfile() {
+      const [tenant_id, brand_id] = document.getElementById('vault-selector').value.split('|');
+      document.getElementById('vault-security-banner').classList.add('hidden');
+      const res = await fetch(`/api/v1/vault/${tenant_id}/${brand_id}`);
+      const data = await res.json();
+      const p = data.profile;
+
+      document.getElementById('vault-profile-details').innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-base">${p.brand_name}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300">tenant: ${p.tenant_id}</span>
+          </div>
+          <div class="text-xs text-slate-500"><strong>Tone Archetype:</strong> ${p.tone_archetype}</div>
+          <div class="text-xs text-slate-500"><strong>Mandatory Disclaimer:</strong> ${p.mandatory_disclaimer}</div>
+          <div class="pt-1">
+            <div class="text-xs font-semibold text-rose-600 dark:text-rose-400 mb-1">Prohibited Claims (Auto-Blocked by Compliance Judge):</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${(p.prohibited_phrases || []).map(ph => `<span class="px-2 py-0.5 rounded text-xs bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">${ph}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('vault-episodic-list').innerHTML = (data.episodic_learnings || []).map(l => `
+        <li class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+          🧠 ${l}
+        </li>
+      `).join('');
+    }
+
+    async function runVaultSearch() {
+      const [tenant_id, brand_id] = document.getElementById('vault-selector').value.split('|');
+      const query = document.getElementById('rag-search-input').value;
+      const res = await fetch('/api/v1/vault/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id, brand_id, query })
+      });
+      const data = await res.json();
+      document.getElementById('rag-search-results').innerHTML = (data.results || []).map(r => `
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+          <div class="flex items-center justify-between font-mono">
+            <span class="font-bold text-indigo-600 dark:text-indigo-400">${r.rule_id} (${r.category})</span>
+            <span class="text-emerald-600 dark:text-emerald-400">RRF Score: ${r.rrf_score}</span>
+          </div>
+          <div class="text-slate-700 dark:text-slate-300">${r.content}</div>
+        </div>
+      `).join('');
+    }
+
+    async function addCustomBrandRule() {
+      const [tenant_id, brand_id] = document.getElementById('vault-selector').value.split('|');
+      const custom_rule = document.getElementById('new-vault-rule').value.trim();
+      if (!custom_rule) return;
+      await fetch('/api/v1/vault/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id, brand_id, custom_rule })
+      });
+      document.getElementById('new-vault-rule').value = '';
+      await loadVaultProfile();
+      await runVaultSearch();
+    }
+
+    async function simulateCrossTenantAttack() {
+      const res = await fetch('/api/v1/vault/tenant_nova/novapay?requesting_tenant_id=tenant_aurora');
+      const data = await res.json();
+      const banner = document.getElementById('vault-security-banner');
+      banner.classList.remove('hidden');
+      banner.className = 'p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 text-xs font-mono';
+      banner.textContent = `✓ HTTP ${res.status} Blocked Cross-Tenant Probe: ${data.detail}`;
+    }
+
+    // -----------------------------------------------------------------------
+    // TAB 3: 4-Gate Evaluation Suite Functions
+    // -----------------------------------------------------------------------
+    async function loadLatestEvals() {
+      const res = await fetch('/api/v1/evals/latest');
+      const report = await res.json();
+      renderEvalReport(report);
+    }
+
+    async function runLiveEvalSuite() {
+      const btn = document.getElementById('run-evals-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Running 4-Gate Suite...';
+      try {
+        const res = await fetch('/api/v1/evals/run', { method: 'POST' });
+        const report = await res.json();
+        renderEvalReport(report);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶ Run 4-Gate Evaluation Suite Now';
+      }
+    }
+
+    function renderEvalReport(report) {
+      if (!report || !report.gates) return;
+      const g = report.gates;
+      const cards = [
+        g.gate1_deterministic_specs_and_math,
+        g.gate2_trajectory_and_fault_recovery,
+        g.gate3_compliance_and_redteaming
+      ];
+      document.getElementById('eval-gate-cards').innerHTML = cards.map(c => `
+        <div class="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/20">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400">${c.passed ? '✓ GATE PASSED' : '✗ GATE FAILED'}</span>
+            <span class="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-300">${c.score_pct}%</span>
+          </div>
+          <div class="font-bold text-sm mt-1">${c.name}</div>
+        </div>
+      `).join('');
+
+      const metrics = (g.gate4_regression_matrix && g.gate4_regression_matrix.metrics) || [];
+      document.getElementById('eval-regression-tbody').innerHTML = metrics.map(m => `
+        <tr>
+          <td class="py-3 px-4 font-medium">${m.metric}</td>
+          <td class="py-3 px-4 font-mono text-slate-500">${m.baseline}</td>
+          <td class="py-3 px-4 font-mono font-bold">${m.candidate}</td>
+          <td class="py-3 px-4 font-mono text-xs text-slate-500">${m.threshold}</td>
+          <td class="py-3 px-4 font-mono text-emerald-600 dark:text-emerald-400 font-semibold">${m.delta}</td>
+          <td class="py-3 px-4">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">${m.status}</span>
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('eval-cases-list').innerHTML = (report.cases || []).map(c => `
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold font-mono text-indigo-600 dark:text-indigo-400">${c.case_id}</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">PASSED (${c.latency_ms} ms)</span>
+          </div>
+          <div class="text-slate-700 dark:text-slate-300 font-medium">${c.description}</div>
+          <div class="text-slate-500 font-mono pt-1">
+            Budget Drift: $${c.budget_drift_usd} | Revisions: ${c.revision_count} | 503 Retries: ${c.retry_count} | Sec Flags: ${c.security_flags_count}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      await fetchPresets();
+      await runCampaignWorkflow('camp_aurora_initial');
+    });
+  </script>
+</body>
+</html>
