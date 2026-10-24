@@ -23,13 +23,22 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
-from evals.run_evals import GOLDEN_EVAL_BRIEFS, run_all_evaluation_gates
+from evals.run_evals import (
+    GOLDEN_EVAL_BRIEFS,
+    run_all_evaluation_gates,
+    run_candidate_regression_comparison,
+)
 from src.graph.insights_agent import CampaignInsightsAndSagaAgent
 from src.graph.rfp_agent import SAMPLE_RFP_EMAILS, SalesRFPIntakeAgent
-from src.graph.state import CampaignBrief, ChannelType
+from src.graph.state import CampaignBrief, ChannelType, CreativeAsset
 from src.graph.workflow import AdAizOrchestrator
-from src.harness.executor import mint_approval_token
+from src.harness.executor import (
+    SecurityViolationError,
+    mint_approval_token,
+    verify_operator_role_permission,
+)
 from src.harness.llm_gateway import ModelCascadeGateway
+from src.mcp_servers.creative_server import CreativeMCPServer
 from src.memory.brand_vault import TenantAccessViolationError
 from src.memory.persistence import SQLitePersistenceManager
 
@@ -62,7 +71,23 @@ class HITLDecisionRequest(BaseModel):
 
     approved: bool
     reviewer: str = "Agency Media Director"
+    role: str = "media_director"
     notes: str = ""
+
+
+class ForkCampaignRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    new_budget_usd: float = Field(gt=0)
+
+
+class CandidateEvalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    candidate_version: str = "adaiz-graph-v2.7.0-candidate"
+    prompt_persona: str = "High-Conversion Executive Direct Response"
+    strict_compliance: bool = True
+    model_routing_tier: str = "cascade_hybrid"
 
 
 class SagaRollbackRequest(BaseModel):
@@ -111,6 +136,8 @@ def _serialize_state(state_values: dict[str, Any]) -> dict[str, Any]:
         "retrieved_guideline_chunks": state_values.get("retrieved_guideline_chunks", []),
         "episodic_learnings": state_values.get("episodic_learnings", []),
         "adcp_capabilities": state_values.get("adcp_capabilities", {}),
+        "audience_signals": state_values.get("audience_signals", []),
+        "negotiation_summary": state_values.get("negotiation_summary", {}),
         "content_standards_id": state_values.get("content_standards_id", ""),
         "creatives": [c.model_dump() if hasattr(c, "model_dump") else c for c in creatives],
         "media_plan": [m.model_dump() if hasattr(m, "model_dump") else m for m in media_plan],
@@ -232,9 +259,16 @@ async def approve_or_revise_campaign(
 ) -> dict[str, Any]:
     """
     Resume a paused workflow at `hitl_approval_gate`.
+    Enforces RBAC (`REQ-FINOPS-01`): only `media_director` can authorize LIVE_SPEND.
     If approved=True, mints a cryptographic HMAC-SHA256 `approval_jwt` authorizing LIVE_SPEND.
     If approved=False, routes back into parallel creative regeneration with operator feedback.
     """
+    try:
+        required_tier = "LIVE_SPEND" if req.approved else "DRAFT_MUTATION"
+        verify_operator_role_permission(req.role, required_tier)
+    except SecurityViolationError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
     orchestrator: AdAizOrchestrator = app.state.orchestrator
     db: SQLitePersistenceManager = app.state.db
     existing = orchestrator.get_campaign_state(campaign_id)
@@ -248,13 +282,13 @@ async def approve_or_revise_campaign(
             tenant_id=brief.tenant_id,
             campaign_id=brief.campaign_id,
             total_budget_usd=brief.total_budget_usd,
-            reviewer=req.reviewer,
+            reviewer=f"{req.reviewer} ({req.role})",
         )
 
     updated = orchestrator.resume_from_hitl(
         campaign_id=campaign_id,
         approved=req.approved,
-        reviewer=req.reviewer,
+        reviewer=f"{req.reviewer} ({req.role})",
         notes=req.notes,
         approval_jwt=jwt_token,
     )
@@ -265,10 +299,62 @@ async def approve_or_revise_campaign(
         tenant_id=brief.tenant_id,
         brand_id=brief.brand_id,
         approved=req.approved,
-        reviewer=req.reviewer,
+        reviewer=f"{req.reviewer} ({req.role})",
         notes=req.notes,
     )
     return serialized
+
+
+@app.get("/api/v1/campaigns/{campaign_id}/ad-tags")
+async def export_campaign_ad_tags(campaign_id: str) -> dict[str, Any]:
+    """
+    REQ-DCO-01: Export standards-compliant IAB VAST 4.2 XML (CTV/Video) and
+    HTML5 clickTag Ad Bundles (Display/DOOH) + DCO Variants for all campaign creatives.
+    """
+    orchestrator: AdAizOrchestrator = app.state.orchestrator
+    db: SQLitePersistenceManager = app.state.db
+    state_values = orchestrator.get_campaign_state(campaign_id)
+    serialized = _serialize_state(state_values) if state_values else db.load_campaign_snapshot(campaign_id)
+    if not serialized:
+        raise HTTPException(status_code=404, detail=f"Campaign '{campaign_id}' not found.")
+
+    brand_name = serialized.get("brief", {}).get("brand_name", "Brand")
+    tags = []
+    for raw_c in serialized.get("creatives", []):
+        asset = CreativeAsset(**raw_c) if isinstance(raw_c, dict) else raw_c
+        tags.append(CreativeMCPServer.export_traffickable_ad_tag(asset, brand_name=brand_name))
+    return {"campaign_id": campaign_id, "ad_tags": tags}
+
+
+@app.get("/api/v1/campaigns/{campaign_id}/checkpoints")
+async def get_campaign_checkpoints(campaign_id: str) -> dict[str, Any]:
+    """
+    REQ-ORCH-02: Return LangGraph state checkpoint timeline for Time-Travel inspection.
+    """
+    orchestrator: AdAizOrchestrator = app.state.orchestrator
+    history = orchestrator.get_checkpoint_history(campaign_id)
+    return {"campaign_id": campaign_id, "checkpoints": history}
+
+
+@app.post("/api/v1/campaigns/{campaign_id}/fork")
+async def fork_campaign_checkpoint(
+    campaign_id: str, req: ForkCampaignRequest
+) -> dict[str, Any]:
+    """
+    REQ-ORCH-02: Time-Travel / State Forking — clone a campaign from its checkpoint history
+    with a modified budget and re-orchestrate in a new forked thread.
+    """
+    orchestrator: AdAizOrchestrator = app.state.orchestrator
+    db: SQLitePersistenceManager = app.state.db
+    try:
+        forked_state = orchestrator.fork_campaign_with_new_budget(
+            source_campaign_id=campaign_id, new_budget_usd=req.new_budget_usd
+        )
+        serialized = _serialize_state(forked_state)
+        db.save_campaign_snapshot(serialized)
+        return serialized
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/v1/campaigns/{campaign_id}/optimize-pacing")
@@ -416,6 +502,19 @@ async def trigger_eval_suite() -> dict[str, Any]:
     report = run_all_evaluation_gates()
     app.state.last_eval_report = report
     return report
+
+
+@app.post("/api/v1/evals/compare-candidate")
+async def compare_candidate_eval_config(req: CandidateEvalRequest) -> dict[str, Any]:
+    """
+    REQ-EVAL-02: Run the Interactive Prompt & Config Version Regression Comparator.
+    """
+    return run_candidate_regression_comparison(
+        candidate_version=req.candidate_version,
+        prompt_persona=req.prompt_persona,
+        strict_compliance=req.strict_compliance,
+        model_routing_tier=req.model_routing_tier,
+    )
 
 
 @app.get("/")

@@ -179,15 +179,62 @@ class AdAizOrchestrator:
         )
         events.extend(prod_events)
 
-        # 4. Tier-0 Deterministic Budget Allocation (Penny-Perfect Conservation)
-        media_plan = self.adcp_server.allocate_media_budget_deterministic(
+        # 4. Resolve Privacy-Safe Audience Signals (AAMP / IAB SDA / UID2 Clean Room)
+        audience_signals, aud_events = self.harness.execute_tool(
+            node_name="media_discovery_adcp",
+            tool_name="aamp_resolve_audience_signals",
+            tier="READ_ONLY",
+            fn=self.adcp_server.resolve_audience_signals_aamp,
+            kwargs={
+                "audience_segments": brief.audience_segments,
+                "target_geos": brief.target_geos,
+                "channels": brief.target_channels,
+            },
+            tenant_id=brief.tenant_id,
+            campaign_id=brief.campaign_id,
+            estimated_cost_usd=0.001,
+        )
+        events.extend(aud_events)
+
+        # 5. Execute 3-Round A2A Buyer <-> Seller Rate Negotiation (REQ-A2A-02)
+        negotiated_products, neg_summary = self.adcp_server.negotiate_a2a_rates(
             campaign_id=brief.campaign_id,
             total_budget_usd=brief.total_budget_usd,
             discovered_products=discovered_products,
         )
 
+        # 6. Tier-0 Deterministic Budget Allocation (Penny-Perfect Conservation)
+        media_plan = self.adcp_server.allocate_media_budget_deterministic(
+            campaign_id=brief.campaign_id,
+            total_budget_usd=brief.total_budget_usd,
+            discovered_products=negotiated_products,
+        )
+
+        total_savings_usd = round(sum(m.negotiated_savings_usd for m in media_plan), 2)
+        total_bonus_imps = sum(m.bonus_impressions for m in media_plan)
+        neg_summary["total_client_savings_usd"] = total_savings_usd
+        neg_summary["total_bonus_impressions"] = total_bonus_imps
+
+        events.append(
+            ExecutionTraceEvent(
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                node="media_discovery_adcp",
+                event_type="tool_call",
+                summary=(
+                    f"3-Round A2A Rate Negotiation cleared {len(media_plan)} PMP/PG deals: "
+                    f"Saved ${total_savings_usd:,.2f} (-{neg_summary['average_cpm_discount_pct']}% CPM) "
+                    f"+ {total_bonus_imps:,} bonus impressions."
+                ),
+                duration_ms=2.8,
+                cost_usd=0.002,
+                metadata=neg_summary,
+            )
+        )
+
         return {
             "adcp_capabilities": capabilities,
+            "audience_signals": audience_signals,
+            "negotiation_summary": neg_summary,
             "content_standards_id": gov_standards["content_standards_id"],
             "media_plan": media_plan,
             "trace_events": events,
@@ -606,3 +653,50 @@ class AdAizOrchestrator:
         if snapshot.next and "hitl_approval_gate" in snapshot.next:
             state_values["workflow_status"] = "awaiting_human_approval"
         return state_values
+
+    def get_checkpoint_history(self, campaign_id: str) -> list[dict[str, Any]]:
+        """
+        REQ-ORCH-02: Retrieve full LangGraph state checkpoint timeline for Time-Travel inspection.
+        """
+        thread_config = {"configurable": {"thread_id": campaign_id}}
+        history: list[dict[str, Any]] = []
+        for idx, snap in enumerate(self.graph.get_state_history(thread_config)):
+            vals = snap.values or {}
+            brief = vals.get("brief")
+            budget = brief.total_budget_usd if hasattr(brief, "total_budget_usd") else 0.0
+            history.append(
+                {
+                    "step_index": idx,
+                    "checkpoint_id": snap.config.get("configurable", {}).get("checkpoint_id", f"cp_{idx}"),
+                    "next_nodes": list(snap.next) if snap.next else ["END"],
+                    "workflow_status": vals.get("workflow_status", "running"),
+                    "revision_count": vals.get("revision_count", 0),
+                    "creatives_count": len(vals.get("creatives", [])),
+                    "media_lines_count": len(vals.get("media_plan", [])),
+                    "total_budget_usd": budget,
+                    "created_at": getattr(snap, "created_at", None) or datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        return history
+
+    def fork_campaign_with_new_budget(
+        self, source_campaign_id: str, new_budget_usd: float, new_campaign_id: str | None = None
+    ) -> dict[str, Any]:
+        """
+        REQ-ORCH-02: Time-Travel / State Forking — clone an existing campaign's brief from its checkpoint
+        history, apply a modified budget/configuration, and re-orchestrate in a forked thread.
+        """
+        existing = self.get_campaign_state(source_campaign_id)
+        if not existing or "brief" not in existing:
+            raise ValueError(f"Cannot fork: Source campaign '{source_campaign_id}' not found.")
+        source_brief: CampaignBrief = existing["brief"]
+        fork_id = new_campaign_id or f"{source_campaign_id}_fork_{int(new_budget_usd)}"
+        forked_brief = source_brief.model_copy(
+            update={
+                "campaign_id": fork_id,
+                "total_budget_usd": round(float(new_budget_usd), 2),
+                "simulate_dsp_503_once": False,
+            }
+        )
+        return self.run_until_hitl(forked_brief)
+

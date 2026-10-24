@@ -248,4 +248,74 @@ def test_fastapi_operator_console_and_hitl_api_contracts() -> None:
         )
         assert all(m["adcp_status"] == "quarantined" for m in saga_data["media_plan"])
 
+        # 9. REQ-A2A-02 & REQ-AUD-01: Verify 3-Round A2A Negotiation Savings & Audience Clean-Room Signals
+        assert state_data["negotiation_summary"]["rounds_completed"] == 3
+        assert state_data["negotiation_summary"]["total_client_savings_usd"] > 0
+        assert len(state_data["audience_signals"]) >= 1
+        assert all("uid2_clean_room_cohort" in s for s in state_data["audience_signals"])
+
+        # 10. REQ-DCO-01: Export IAB VAST 4.2 XML & HTML5 clickTag Ad Bundles + DCO Variants
+        tags_res = client.get("/api/v1/campaigns/api_test_camp_01/ad-tags")
+        assert tags_res.status_code == 200
+        ad_tags = tags_res.json()["ad_tags"]
+        assert len(ad_tags) == 3
+        ctv_tag = next(t for t in ad_tags if t["channel"] == "ctv")
+        disp_tag = next(t for t in ad_tags if t["channel"] == "display")
+        assert "<VAST version=\"4.2\"" in ctv_tag["code"]
+        assert "var clickTag" in disp_tag["code"]
+        assert len(ctv_tag["dco_variants"]) == 2
+
+        # 11. REQ-ORCH-02: LangGraph Time-Travel Checkpoint History & State Forking
+        cp_res = client.get("/api/v1/campaigns/api_test_camp_01/checkpoints")
+        assert cp_res.status_code == 200
+        assert len(cp_res.json()["checkpoints"]) >= 1
+
+        fork_res = client.post(
+            "/api/v1/campaigns/api_test_camp_01/fork",
+            json={"new_budget_usd": 110000.00},
+        )
+        assert fork_res.status_code == 200
+        fork_data = fork_res.json()
+        assert fork_data["brief"]["total_budget_usd"] == 110000.00
+        assert fork_data["workflow_status"] == "awaiting_human_approval"
+
+        # 12. REQ-FINOPS-01: RBAC Role Enforcement (media_planner blocked from approving LIVE_SPEND)
+        rbac_block_res = client.post(
+            f"/api/v1/campaigns/{fork_data['campaign_id']}/approve",
+            json={
+                "approved": True,
+                "reviewer": "Junior Planner",
+                "role": "media_planner",
+                "notes": "Trying to approve live spend without director role",
+            },
+        )
+        assert rbac_block_res.status_code == 403
+        assert "RBAC Permission Denied" in rbac_block_res.json()["detail"]
+
+        # 13. REQ-EVAL-02: Interactive Candidate Prompt & Config Version Regression Lab
+        cand_pass_res = client.post(
+            "/api/v1/evals/compare-candidate",
+            json={
+                "candidate_version": "adaiz-graph-v2.7.0-rc1",
+                "prompt_persona": "Executive Direct",
+                "strict_compliance": True,
+                "model_routing_tier": "flash_optimized",
+            },
+        )
+        assert cand_pass_res.status_code == 200
+        assert cand_pass_res.json()["ci_cd_verdict"] == "ALLOW_DEPLOY"
+
+        cand_block_res = client.post(
+            "/api/v1/evals/compare-candidate",
+            json={
+                "candidate_version": "adaiz-graph-v2.7.0-unsafe",
+                "prompt_persona": "Aggressive Hype",
+                "strict_compliance": False,
+                "model_routing_tier": "cascade_hybrid",
+            },
+        )
+        assert cand_block_res.status_code == 200
+        assert cand_block_res.json()["ci_cd_verdict"] == "BLOCK_DEPLOY_REGRESSION"
+
+
 

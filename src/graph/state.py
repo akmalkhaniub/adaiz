@@ -60,6 +60,7 @@ class CreativeAsset(BaseModel):
     visual_scene_description: str = ""
     storyboard_beats: list[str] = Field(default_factory=list)
     contextual_triggers: list[str] = Field(default_factory=list)
+    dco_variants: list[dict[str, Any]] = Field(default_factory=list)
     disclaimer_text: str = ""
     c2pa_provenance: dict[str, Any] = Field(default_factory=dict)
     spec_valid: bool = True
@@ -80,9 +81,14 @@ class MediaLineItem(BaseModel):
     product_name: str
     deal_id: str
     buying_type: Literal["PMP", "PG", "OpenRTB_2.6"] = "PMP"
+    rate_card_cpm_usd: float = 0.0
     allocated_budget_usd: float
     target_cpm_usd: float
+    negotiated_savings_pct: float = 0.0
+    negotiated_savings_usd: float = 0.0
+    bonus_impressions: int = 0
     estimated_impressions: int
+    a2a_negotiation_transcript: list[str] = Field(default_factory=list)
     synced_creative_ids: list[str] = Field(default_factory=list)
     adcp_status: Literal["discovered", "creatives_synced", "active", "quarantined"] = "discovered"
 
@@ -136,6 +142,8 @@ class AdAizGraphState(TypedDict, total=False):
     retrieved_guideline_chunks: list[dict[str, Any]]
     episodic_learnings: list[str]
     adcp_capabilities: dict[str, Any]
+    audience_signals: list[dict[str, Any]]
+    negotiation_summary: dict[str, Any]
     content_standards_id: str
     # Parallel fan-in reducer for omnichannel creative workers
     creatives: Annotated[list[CreativeAsset], merge_creatives_by_channel]

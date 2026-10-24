@@ -175,6 +175,107 @@ class AdCPServer:
         return products
 
     @staticmethod
+    def resolve_audience_signals_aamp(
+        audience_segments: list[str],
+        target_geos: list[str],
+        channels: list[ChannelType],
+    ) -> list[dict[str, Any]]:
+        """
+        REQ-AUD-01: Privacy-Safe Audience Signal & Clean-Room Resolver (AAMP / IAB SDA / UID2).
+        Maps natural-language audience segments into standardized IAB Seller-Defined Audience (SDA)
+        taxonomy IDs, UID2 clean-room cohorts, and cookie-free match rates.
+        """
+        segments = audience_segments or ["High-Intent Core Audience", "Executive Decision Makers"]
+        geo_str = ", ".join(target_geos)
+        resolved: list[dict[str, Any]] = []
+
+        taxonomy_catalog = [
+            {
+                "sda_taxonomy_id": "IAB-AUD-1.6-AUTO-EV-704",
+                "uid2_clean_room_cohort": "UID2-CR-APAC-US-MOBILITY-91A",
+                "signal_provider": "The Trade Desk UID2 + LiveRamp Clean Room",
+                "match_rate_pct": 89.4,
+                "estimated_households": 1420000,
+                "privacy_mode": "Zero-PII Clean-Room Tokenized (GDPR/CCPA Compliant)",
+            },
+            {
+                "sda_taxonomy_id": "IAB-AUD-1.6-B2B-FIN-312",
+                "uid2_clean_room_cohort": "UID2-CR-EXEC-TREASURY-44B",
+                "signal_provider": "AdCP Contextual + Dun & Bradstreet B2B Graph",
+                "match_rate_pct": 92.1,
+                "estimated_households": 680000,
+                "privacy_mode": "Contextual + Seller-Defined Cohort (Cookie-Free)",
+            },
+            {
+                "sda_taxonomy_id": "IAB-AUD-1.6-CPG-URBAN-518",
+                "uid2_clean_room_cohort": "UID2-CR-METRO-COMMUTER-88C",
+                "signal_provider": "Vistar Mobility Graph + Retail Media Clean Room",
+                "match_rate_pct": 86.7,
+                "estimated_households": 2150000,
+                "privacy_mode": "Aggregated Geo-Cohort (Differential Privacy k>=50)",
+            },
+        ]
+
+        for idx, seg_name in enumerate(segments):
+            spec = taxonomy_catalog[idx % len(taxonomy_catalog)]
+            resolved.append(
+                {
+                    "segment_name": seg_name,
+                    "target_geos": geo_str,
+                    "applicable_channels": channels,
+                    **spec,
+                }
+            )
+        return resolved
+
+    @staticmethod
+    def negotiate_a2a_rates(
+        campaign_id: str,
+        total_budget_usd: float,
+        discovered_products: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """
+        REQ-A2A-02: Multi-Round Agent-to-Agent (A2A) Rate Negotiation Engine.
+        Executes a 3-round negotiation between the Agency Buyer Agent and each SSP Seller Agent,
+        securing volume-tier CPM discounts (8% - 14%) and 5% bonus impressions.
+        """
+        # Higher total budgets unlock deeper A2A bundle discounts
+        base_discount_pct = 12.5 if total_budget_usd >= 60000 else 9.0
+        negotiated_products: list[dict[str, Any]] = []
+        total_savings_usd = 0.0
+        total_bonus_impressions = 0
+
+        for idx, prod in enumerate(discovered_products):
+            rate_card_cpm = float(prod["target_cpm_usd"])
+            channel_discount_pct = round(base_discount_pct + (idx * 0.8), 1)
+            clearing_cpm = round(rate_card_cpm * (1.0 - channel_discount_pct / 100.0), 2)
+            ask_cpm = round(rate_card_cpm * (1.0 - (channel_discount_pct + 4.0) / 100.0), 2)
+
+            transcript = [
+                f"Round 1 [Seller {prod['seller_agent_id']}]: Quoted rate-card floor ${rate_card_cpm:.2f} CPM for {prod['deal_id']}.",
+                f"Round 2 [AdAiz Buyer Agent]: Counter-offered ${ask_cpm:.2f} CPM citing ${total_budget_usd:,.0f} omnichannel commitment + UID2 clean-room signal.",
+                f"Round 3 [Seller {prod['seller_agent_id']}]: Accepted clearing PMP/PG rate of ${clearing_cpm:.2f} CPM (-{channel_discount_pct}%) + 5% added-value bonus impressions.",
+            ]
+
+            updated_prod = dict(prod)
+            updated_prod["rate_card_cpm_usd"] = rate_card_cpm
+            updated_prod["target_cpm_usd"] = clearing_cpm
+            updated_prod["negotiated_savings_pct"] = channel_discount_pct
+            updated_prod["a2a_negotiation_transcript"] = transcript
+            negotiated_products.append(updated_prod)
+
+        summary = {
+            "rounds_completed": 3,
+            "average_cpm_discount_pct": round(
+                sum(p["negotiated_savings_pct"] for p in negotiated_products)
+                / max(len(negotiated_products), 1),
+                1,
+            ),
+            "protocol": "A2A/1.0 + AdCP Deal Negotiation",
+        }
+        return negotiated_products, summary
+
+    @staticmethod
     def allocate_media_budget_deterministic(
         campaign_id: str,
         total_budget_usd: float,
@@ -203,7 +304,12 @@ class AdCPServer:
                 allocated_so_far = round(allocated_so_far + budget_share, 2)
 
             cpm = float(prod["target_cpm_usd"])
-            est_impressions = int((budget_share / cpm) * 1000)
+            rate_card_cpm = float(prod.get("rate_card_cpm_usd", cpm))
+            savings_pct = float(prod.get("negotiated_savings_pct", 0.0))
+            savings_usd = round(budget_share * (savings_pct / 100.0), 2)
+            base_impressions = int((budget_share / cpm) * 1000)
+            bonus_imps = int(base_impressions * 0.05) if savings_pct > 0 else 0
+            est_impressions = base_impressions + bonus_imps
 
             line_items.append(
                 MediaLineItem(
@@ -214,9 +320,14 @@ class AdCPServer:
                     product_name=prod["product_name"],
                     deal_id=prod["deal_id"],
                     buying_type=prod["buying_type"],
+                    rate_card_cpm_usd=rate_card_cpm,
                     allocated_budget_usd=budget_share,
                     target_cpm_usd=cpm,
+                    negotiated_savings_pct=savings_pct,
+                    negotiated_savings_usd=savings_usd,
+                    bonus_impressions=bonus_imps,
                     estimated_impressions=est_impressions,
+                    a2a_negotiation_transcript=prod.get("a2a_negotiation_transcript", []),
                 )
             )
         return line_items

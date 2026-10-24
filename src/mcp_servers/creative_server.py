@@ -162,6 +162,21 @@ class CreativeMCPServer:
                 "Live Weather Adaptive Brightness",
             ]
 
+        dco_variants = [
+            {
+                "variant_id": f"DCO-{channel.upper()}-A",
+                "trigger_condition": "Morning Rush / High-Intent Executive Cohort",
+                "dynamic_headline": headline,
+                "cta_override": brand_guidelines.get("default_cta", "Learn More"),
+            },
+            {
+                "variant_id": f"DCO-{channel.upper()}-B",
+                "trigger_condition": f"Evening Prime / Localized {brief.target_geos[0]} Metro",
+                "dynamic_headline": f"{brand_name}: Proven Precision in {brief.target_geos[0]}",
+                "cta_override": "Claim Local Offer",
+            },
+        ]
+
         asset_hash = hashlib.md5(
             f"{brief.campaign_id}:{channel}:rev{revision_count}".encode()
         ).hexdigest()[:6].upper()
@@ -187,6 +202,7 @@ class CreativeMCPServer:
             ),
             storyboard_beats=storyboard,
             contextual_triggers=triggers,
+            dco_variants=dco_variants,
             disclaimer_text=brand_guidelines.get(
                 "mandatory_disclaimer", "Terms and conditions apply."
             ),
@@ -315,3 +331,111 @@ class CreativeMCPServer:
             else " | ".join(feedback_items)
         )
         return all_passed, summary_feedback, evaluated_assets
+
+    @staticmethod
+    def export_traffickable_ad_tag(asset: CreativeAsset, brand_name: str = "Brand") -> dict[str, Any]:
+        """
+        REQ-DCO-01: Export standards-compliant traffickable ad payload:
+        - IAB VAST 4.2 XML for `ctv` and `video`
+        - Self-contained HTML5 `clickTag` Ad Bundle for `display` and `dooh`
+        """
+        width, height = asset.dimensions.split("x")
+        if asset.channel in ("ctv", "video"):
+            duration_hhmmss = f"00:00:{asset.duration_sec or 15:02d}"
+            vast_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Ad id="{asset.asset_id}">
+    <InLine>
+      <AdSystem version="2.6.0">AdAiz Agentic Ad Server</AdSystem>
+      <AdTitle><![CDATA[{brand_name} - {asset.headline}]]></AdTitle>
+      <Impression id="imp-{asset.asset_id}"><![CDATA[https://telemetry.adaiz.ai/v1/imp?asset={asset.asset_id}]]></Impression>
+      <Creatives>
+        <Creative id="cr-{asset.asset_id}" sequence="1">
+          <Linear>
+            <Duration>{duration_hhmmss}</Duration>
+            <TrackingEvents>
+              <Tracking event="start"><![CDATA[https://telemetry.adaiz.ai/v1/track?e=start&a={asset.asset_id}]]></Tracking>
+              <Tracking event="firstQuartile"><![CDATA[https://telemetry.adaiz.ai/v1/track?e=q1&a={asset.asset_id}]]></Tracking>
+              <Tracking event="midpoint"><![CDATA[https://telemetry.adaiz.ai/v1/track?e=mid&a={asset.asset_id}]]></Tracking>
+              <Tracking event="thirdQuartile"><![CDATA[https://telemetry.adaiz.ai/v1/track?e=q3&a={asset.asset_id}]]></Tracking>
+              <Tracking event="complete"><![CDATA[https://telemetry.adaiz.ai/v1/track?e=complete&a={asset.asset_id}]]></Tracking>
+            </TrackingEvents>
+            <VideoClicks>
+              <ClickThrough id="click-{asset.asset_id}"><![CDATA[https://brand.adaiz.ai/landing?asset={asset.asset_id}]]></ClickThrough>
+            </VideoClicks>
+            <MediaFiles>
+              <MediaFile id="mf-{asset.asset_id}" delivery="progressive" type="video/mp4" width="{width}" height="{height}" codec="H.264" bitrate="4500">
+                <![CDATA[https://cdn.adaiz.ai/creatives/{asset.asset_id}_{asset.dimensions}.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+      <Extensions>
+        <Extension type="C2PA_Provenance">
+          <ManifestURN>{asset.c2pa_provenance.get("c2pa_manifest", "urn:c2pa:adaiz-2026")}</ManifestURN>
+          <SafeZoneInsetPct>{asset.safe_zone_inset_pct}</SafeZoneInsetPct>
+        </Extension>
+      </Extensions>
+    </InLine>
+  </Ad>
+</VAST>"""
+            return {
+                "asset_id": asset.asset_id,
+                "channel": asset.channel,
+                "standard": "IAB VAST 4.2 XML",
+                "mime_type": "application/xml",
+                "filename": f"{asset.asset_id}_vast42.xml",
+                "code": vast_xml,
+                "dco_variants": asset.dco_variants,
+            }
+
+        html5_bundle = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width={width},height={height}">
+  <title>{brand_name} - {asset.asset_id}</title>
+  <script type="text/javascript">
+    var clickTag = "https://brand.adaiz.ai/click?asset={asset.asset_id}";
+  </script>
+  <style>
+    body, html {{ margin: 0; padding: 0; width: {width}px; height: {height}px; overflow: hidden; font-family: 'Inter', sans-serif; }}
+    .ad-container {{
+      box-sizing: border-box; width: 100%; height: 100%; padding: 16px;
+      background: {asset.background_hex}; color: #FFFFFF;
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;
+    }}
+    .brand-badge {{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; }}
+    .headline {{ font-size: 18px; font-weight: 700; line-height: 1.25; margin-top: 6px; }}
+    .subheadline {{ font-size: 12px; opacity: 0.85; margin-top: 4px; }}
+    .cta-btn {{
+      display: inline-block; background: {asset.primary_hex}; color: #FFFFFF;
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-top: 10px;
+    }}
+    .disclaimer {{ font-size: 9px; opacity: 0.65; margin-top: 8px; }}
+  </style>
+</head>
+<body>
+  <div class="ad-container" onclick="window.open(window.clickTag, '_blank')">
+    <div>
+      <div class="brand-badge">{brand_name} • {asset.channel.upper()}</div>
+      <div class="headline">{asset.headline}</div>
+      <div class="subheadline">{asset.subheadline}</div>
+      {f'<div class="cta-btn">{asset.cta_text} →</div>' if asset.cta_text else ''}
+    </div>
+    <div class="disclaimer">{asset.disclaimer_text}</div>
+  </div>
+</body>
+</html>"""
+        return {
+            "asset_id": asset.asset_id,
+            "channel": asset.channel,
+            "standard": "IAB HTML5 Ad Portfolio (clickTag Ready)",
+            "mime_type": "text/html",
+            "filename": f"{asset.asset_id}_{asset.dimensions}.html",
+            "code": html5_bundle,
+            "dco_variants": asset.dco_variants,
+        }
+

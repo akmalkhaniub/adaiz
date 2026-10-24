@@ -39,6 +39,29 @@ class BudgetCircuitBreakerError(RuntimeError):
     """Raised when a workflow exceeds its maximum step count or FinOps dollar ceiling."""
 
 
+ROLE_PERMISSIONS: dict[str, set[str]] = {
+    "media_director": {"READ_ONLY", "DRAFT_MUTATION", "LIVE_SPEND"},
+    "media_planner": {"READ_ONLY", "DRAFT_MUTATION"},
+    "compliance_auditor": {"READ_ONLY"},
+}
+
+
+def verify_operator_role_permission(role: str, required_tier: SensitivityTier) -> None:
+    """
+    REQ-FINOPS-01: Role-Based Access Control (RBAC) enforcement.
+    Blocks unauthorized operator roles (e.g., `media_planner` or `compliance_auditor`)
+    from authorizing `LIVE_SPEND` financial actions.
+    """
+    normalized_role = role.strip().lower()
+    allowed = ROLE_PERMISSIONS.get(normalized_role, set())
+    if required_tier not in allowed:
+        raise SecurityViolationError(
+            f"RBAC Permission Denied: Operator role '{normalized_role}' is not authorized for '{required_tier}' actions. "
+            f"Requires 'media_director' role to approve live media spend."
+        )
+
+
+
 PROMPT_INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?previous\s+instructions",
     r"bypass\s+compliance",

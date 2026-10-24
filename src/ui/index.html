@@ -62,11 +62,16 @@
         </button>
       </nav>
 
-      <!-- System Status & Theme Toggle -->
-      <div class="flex items-center gap-3">
-        <div class="hidden md:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/70">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>AdCP & Guardrails Online</span>
+      <!-- System Status, RBAC Role Switcher & Theme Toggle -->
+      <div class="flex items-center gap-2.5">
+        <div class="hidden xl:flex items-center gap-1.5 text-xs">
+          <span class="text-slate-400 font-medium">Operator Role:</span>
+          <select id="operator-role-select"
+            class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="media_director">Media Director (LIVE_SPEND Authorized)</option>
+            <option value="media_planner">Media Planner (Draft Only — Blocks Live Spend)</option>
+            <option value="compliance_auditor">Compliance Auditor (Read-Only)</option>
+          </select>
         </div>
         <button onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Light/Dark Theme"
           class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-indigo-500 transition-colors">
@@ -256,14 +261,19 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Left 7 Cols: Omnichannel Creative Studio Previews -->
         <div class="lg:col-span-7 space-y-4">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-lg font-bold">Omnichannel Creative Studio</h2>
+              <h2 class="text-lg font-bold">Omnichannel Creative Studio & DCO</h2>
               <p class="text-xs text-slate-500 dark:text-slate-400">
-                Generated in parallel via LangGraph <code class="font-mono">Send()</code> • Verified for IAB Dimensions, WCAG Contrast, CTV Safe Zones & DOOH Legibility
+                Generated in parallel via LangGraph <code class="font-mono">Send()</code> • IAB Dimensions, WCAG Contrast, CTV Safe Zones & DOOH Legibility
               </p>
             </div>
+            <button onclick="exportTraffickableAdTags()"
+              class="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-indigo-600 hover:opacity-90 text-white text-xs font-semibold transition">
+              📦 Export VAST 4.2 XML & HTML5 Ad Tags
+            </button>
           </div>
+          <div id="ad-tags-drawer" class="hidden bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-3 border border-indigo-500/40"></div>
           <div id="creatives-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
@@ -317,12 +327,43 @@
             </div>
           </div>
         </details>
+        <details class="group bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <summary class="px-5 py-3.5 cursor-pointer flex items-center justify-between text-sm font-semibold select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+            <div class="flex items-center gap-2.5">
+              <span class="text-indigo-600 dark:text-indigo-400 transition-transform group-open:rotate-90">▶</span>
+              <span>Inspect LangGraph Time-Travel Checkpoints, Audience Clean-Room (<code class="font-mono text-xs">UID2 / SDA</code>) & A2A Negotiation Transcripts</span>
+            </div>
+            <span class="text-xs text-slate-400">Time-Travel & A2A Protocols</span>
+          </summary>
+          <div class="p-5 border-t border-slate-200 dark:border-slate-800 space-y-4 bg-slate-50/50 dark:bg-[#0B0F19]/60">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div>
+                <div class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">⏳ LangGraph Time-Travel & State Forking (REQ-ORCH-02)</div>
+                <div class="text-xs text-slate-500">Clone current campaign checkpoint into a new forked thread with a modified budget</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" id="fork-budget-input" value="110000" step="1000"
+                  class="w-32 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs font-mono" />
+                <button onclick="forkCurrentCampaign()"
+                  class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">
+                  Fork Checkpoint →
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Privacy-Safe Audience Clean-Room Signals (AAMP / IAB SDA / UID2)</h4>
+                <pre id="audience-signals-json" class="p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-60"></pre>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">3-Round A2A Buyer ↔ Seller Rate Negotiation Transcripts</h4>
+                <pre id="a2a-transcripts-json" class="p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-60"></pre>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
-
-    <!-- ===================================================================== -->
-    <!-- TAB 2: BRAND VAULT & EPISODIC MEMORY                                  -->
-    <!-- ===================================================================== -->
     <section id="tab-view-vault" class="hidden space-y-6">
       <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -422,6 +463,49 @@
               <tbody id="eval-regression-tbody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Interactive Prompt & Config Version Regression Lab (REQ-EVAL-02) -->
+        <div class="p-5 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-base font-bold">Interactive Prompt & Config Version Regression Lab (REQ-EVAL-02)</h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400">
+                Test a candidate prompt persona, model routing cascade, or compliance toggle against the Golden Dataset before merging to production.
+              </p>
+            </div>
+            <button onclick="runCandidateComparison()"
+              class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-indigo-600 hover:opacity-90 text-white text-xs font-semibold whitespace-nowrap">
+              🧪 Compare Candidate vs. Production v2.6.0
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Candidate Version Tag</label>
+              <input type="text" id="cand-version" value="adaiz-graph-v2.7.0-rc1"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 font-mono" />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Prompt Persona</label>
+              <input type="text" id="cand-persona" value="High-Velocity Executive Direct Response"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5" />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Model Routing Cascade Tier</label>
+              <select id="cand-routing" class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5">
+                <option value="flash_optimized">Flash Optimized (-28% Token COGS)</option>
+                <option value="cascade_hybrid" selected>Cascade Hybrid (Balanced)</option>
+                <option value="frontier_max">Frontier Max (Highest Reasoning)</option>
+              </select>
+            </div>
+            <div class="flex items-end pb-1">
+              <label class="inline-flex items-center gap-2 cursor-pointer font-semibold">
+                <input type="checkbox" id="cand-strict-compliance" checked class="rounded text-indigo-600" />
+                <span>Enforce Strict Brand Compliance Gate</span>
+              </label>
+            </div>
+          </div>
+          <div id="candidate-comparison-result" class="hidden pt-2"></div>
         </div>
 
         <!-- Golden Dataset Scenario Execution Breakdown -->
@@ -642,18 +726,110 @@
     async function submitHITLDecision(approved) {
       if (!CURRENT_CAMPAIGN_ID) return;
       const notes = document.getElementById('hitl-reviewer-notes').value;
+      const roleEl = document.getElementById('operator-role-select');
+      const role = roleEl ? roleEl.value : 'media_director';
       const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           approved,
-          reviewer: 'Agency Media Director',
+          reviewer: 'Agency Operator',
+          role,
           notes: notes || (approved ? 'Approved for live AdCP activation.' : 'Refine headline emphasis.')
         })
       });
+      if (res.status === 403) {
+        const err = await res.json();
+        const alertsEl = document.getElementById('workflow-alerts');
+        alertsEl.classList.remove('hidden');
+        alertsEl.innerHTML = `
+          <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 text-xs text-rose-800 dark:text-rose-200 font-semibold">
+            🔒 ${err.detail} (Switch Operator Role in top header to 'Media Director' to authorize LIVE_SPEND).
+          </div>
+        `;
+        return;
+      }
       const state = await res.json();
       document.getElementById('hitl-reviewer-notes').value = '';
       renderCampaignState(state);
+    }
+
+    async function exportTraffickableAdTags() {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const drawer = document.getElementById('ad-tags-drawer');
+      if (!drawer.classList.contains('hidden')) {
+        drawer.classList.add('hidden');
+        return;
+      }
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/ad-tags`);
+      const data = await res.json();
+      drawer.classList.remove('hidden');
+      drawer.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+          <span class="text-xs font-bold text-indigo-300">📦 Traffickable Ad Server Bundles (IAB VAST 4.2 XML & HTML5 clickTag + DCO Variants)</span>
+          <button onclick="document.getElementById('ad-tags-drawer').classList.add('hidden')" class="text-xs text-slate-400 hover:text-white">✕ Close</button>
+        </div>
+        <div class="space-y-3 max-h-80 overflow-y-auto">
+          ${(data.ad_tags || []).map(t => `
+            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="font-bold text-emerald-400">${t.filename} (${t.standard})</span>
+                <span class="text-slate-400">${(t.dco_variants || []).length} DCO Variants Ready</span>
+              </div>
+              <pre class="text-[11px] font-mono text-slate-300 overflow-x-auto max-h-36 p-2 bg-black/50 rounded">${t.code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function forkCurrentCampaign() {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const newBudget = parseFloat(document.getElementById('fork-budget-input').value || '110000');
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/fork`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_budget_usd: newBudget })
+      });
+      const state = await res.json();
+      CURRENT_CAMPAIGN_ID = state.campaign_id;
+      document.getElementById('brief-budget').value = newBudget;
+      renderCampaignState(state);
+    }
+
+    async function runCandidateComparison() {
+      const payload = {
+        candidate_version: document.getElementById('cand-version').value,
+        prompt_persona: document.getElementById('cand-persona').value,
+        model_routing_tier: document.getElementById('cand-routing').value,
+        strict_compliance: document.getElementById('cand-strict-compliance').checked
+      };
+      const res = await fetch('/api/v1/evals/compare-candidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      const container = document.getElementById('candidate-comparison-result');
+      container.classList.remove('hidden');
+      const allowed = data.ci_cd_verdict === 'ALLOW_DEPLOY';
+      container.innerHTML = `
+        <div class="p-3.5 rounded-xl border ${allowed ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'border-rose-400 bg-rose-50 dark:bg-rose-950/50 dark:border-rose-800 text-rose-900 dark:text-rose-200'} text-xs space-y-2">
+          <div class="flex items-center justify-between font-bold">
+            <span>CI/CD Gate Verdict: ${data.ci_cd_verdict}</span>
+            <span class="font-mono">${data.candidate_version} (${data.model_routing_tier})</span>
+          </div>
+          <div>${data.verdict_reason}</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
+            ${(data.comparison || []).map(c => `
+              <div class="p-2 rounded bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+                <div class="text-[10px] text-slate-500">${c.metric}</div>
+                <div class="font-mono font-bold mt-0.5">${c.production_v2_6} → ${c.candidate} (${c.status})</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
     }
 
     // -----------------------------------------------------------------------
@@ -729,11 +905,14 @@
       // 4. Summary Business KPIs
       const totalImps = (state.media_plan || []).reduce((acc, m) => acc + m.estimated_impressions, 0);
       const blendedCpm = totalImps > 0 ? ((state.brief.total_budget_usd / totalImps) * 1000).toFixed(2) : '0.00';
+      const negSum = state.negotiation_summary || {};
+      const clientSavings = negSum.total_client_savings_usd || 0;
+      const avgDisc = negSum.average_cpm_discount_pct || 0;
       document.getElementById('campaign-summary-kpis').innerHTML = `
         <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
           <div class="text-xs text-slate-500 dark:text-slate-400">Allocated Media Budget</div>
           <div class="text-xl font-bold font-mono mt-1">$${state.brief.total_budget_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-          <div class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">✓ $0.00 Conservation Drift</div>
+          <div class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">✓ $0.00 Drift • A2A Saved $${clientSavings.toLocaleString()} (-${avgDisc}%)</div>
         </div>
         <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
           <div class="text-xs text-slate-500 dark:text-slate-400">Projected Omnichannel Reach</div>
@@ -898,6 +1077,21 @@
 
       document.getElementById('rag-chunks-json').textContent = JSON.stringify(state.retrieved_guideline_chunks || [], null, 2);
       document.getElementById('adcp-caps-json').textContent = JSON.stringify(state.adcp_capabilities || {}, null, 2);
+      const audEl = document.getElementById('audience-signals-json');
+      if (audEl) audEl.textContent = JSON.stringify(state.audience_signals || [], null, 2);
+      const a2aEl = document.getElementById('a2a-transcripts-json');
+      if (a2aEl) {
+        const transcripts = (state.media_plan || []).map(m => ({
+          channel: m.channel,
+          deal_id: m.deal_id,
+          rate_card_cpm_usd: m.rate_card_cpm_usd,
+          clearing_cpm_usd: m.target_cpm_usd,
+          savings_pct: m.negotiated_savings_pct,
+          bonus_impressions: m.bonus_impressions,
+          rounds: m.a2a_negotiation_transcript
+        }));
+        a2aEl.textContent = JSON.stringify(transcripts, null, 2);
+      }
     }
 
     // -----------------------------------------------------------------------
