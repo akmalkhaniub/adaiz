@@ -39,6 +39,7 @@ from src.harness.executor import (
     verify_operator_role_permission,
 )
 from src.harness.llm_gateway import ModelCascadeGateway
+from src.harness.tracing import get_tracing_status, setup_agent_tracing
 from src.mcp_servers.creative_server import CreativeMCPServer
 from src.memory.brand_vault import TenantAccessViolationError
 from src.memory.persistence import SQLitePersistenceManager
@@ -147,6 +148,7 @@ def _serialize_state(state_values: dict[str, Any]) -> dict[str, Any]:
         "compliance_status": state_values.get("compliance_status", "pending"),
         "compliance_feedback": state_values.get("compliance_feedback", ""),
         "revision_count": state_values.get("revision_count", 0),
+        "metacognition": state_values.get("metacognition", {}),
         "security_flags": state_values.get("security_flags", []),
         "hitl_decision": state_values.get("hitl_decision"),
         "approval_jwt_present": bool(state_values.get("approval_jwt")),
@@ -158,6 +160,7 @@ def _serialize_state(state_values: dict[str, Any]) -> dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_agent_tracing("AdAiz-Advertising-Engine")
     app.state.orchestrator = AdAizOrchestrator()
     app.state.db = SQLitePersistenceManager()
     app.state.llm_gateway = ModelCascadeGateway()
@@ -188,6 +191,7 @@ async def health_check() -> dict[str, Any]:
         "config_version": AdAizOrchestrator.CONFIG_VERSION,
         "protocols": ["AdCP/1.0", "MCP/Streamable-HTTP", "OpenRTB/2.6", "A2A/AgentCard", "SSE/Events"],
         "llm_gateway": gateway.get_gateway_status(),
+        "otel_tracing": get_tracing_status(),
         "persistence": {
             "engine": "SQLite WAL (adaiz_state.db)",
             "stored_campaigns_count": len(db.list_recent_campaigns(limit=100)),

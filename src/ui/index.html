@@ -1315,8 +1315,9 @@
       const cards = [
         g.gate1_deterministic_specs_and_math,
         g.gate2_trajectory_and_fault_recovery,
-        g.gate3_compliance_and_redteaming
-      ];
+        g.gate3_compliance_and_redteaming,
+        g.gate3_5_llm_as_a_judge_rubric
+      ].filter(Boolean);
       document.getElementById('eval-gate-cards').innerHTML = cards.map(c => `
         <div class="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/20">
           <div class="flex items-center justify-between">
@@ -1324,6 +1325,7 @@
             <span class="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-300">${c.score_pct}%</span>
           </div>
           <div class="font-bold text-sm mt-1">${c.name}</div>
+          ${c.rubric ? `<div class="text-[11px] font-mono text-slate-500 mt-1">Rubric Avg: ${c.rubric.overall_score}/5.0</div>` : ''}
         </div>
       `).join('');
 

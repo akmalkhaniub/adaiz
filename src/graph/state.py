@@ -153,6 +153,7 @@ class AdAizGraphState(TypedDict, total=False):
     compliance_status: Literal["pending", "approved", "rejected"]
     compliance_feedback: str
     revision_count: int
+    metacognition: dict[str, Any]
     security_flags: list[str]
     hitl_decision: dict[str, Any] | None
     approval_jwt: str | None

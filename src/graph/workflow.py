@@ -25,6 +25,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, Send, interrupt
 
+from src.graph.metacognition import ConfidenceGate, StagnationDetector
 from src.graph.state import AdAizGraphState, CampaignBrief, ExecutionTraceEvent
 from src.harness.executor import AgentHarness, scan_for_prompt_injection
 from src.mcp_servers.adcp_server import AdCPServer
@@ -51,6 +52,8 @@ class AdAizOrchestrator:
         self.harness = harness or AgentHarness()
         self.adcp_server = adcp_server or AdCPServer()
         self.creative_server = creative_server or CreativeMCPServer()
+        self.stagnation_detector = StagnationDetector(similarity_threshold=0.90)
+        self.confidence_gate = ConfidenceGate(min_confidence_threshold=0.80)
         self.checkpointer = MemorySaver()
         self.graph = self._build_graph()
 
@@ -367,6 +370,26 @@ class AdAizOrchestrator:
             retrieved_chunks=chunks,
         )
 
+        # REQ-META-01: Metacognitive Stagnation Detection & Confidence Gate
+        brief = state["brief"]
+        draft_signature = " | ".join(
+            f"{c.channel}:{c.headline}:{c.subheadline}" for c in audited_creatives
+        )
+        stagnation_info = self.stagnation_detector.check_iteration(
+            campaign_id=brief.campaign_id,
+            current_draft_signature=draft_signature,
+            has_unresolved_errors=not passed,
+        )
+        confidence_info = self.confidence_gate.evaluate_confidence(
+            creatives=audited_creatives,
+            budget_math_valid=bool(state.get("budget_math_valid", True)),
+            compliance_passed=passed,
+        )
+        metacognition_report = {
+            **confidence_info,
+            "stagnation_check": stagnation_info,
+        }
+
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
         if passed or rev >= 2:
             event = ExecutionTraceEvent(
@@ -374,12 +397,16 @@ class AdAizOrchestrator:
                 node="compliance_judge",
                 event_type="route",
                 summary=(
-                    f"Compliance Judge APPROVED all {len(audited_creatives)} creatives on pass #{rev + 1}. "
-                    f"Routing -> hitl_approval_gate."
+                    f"Compliance Judge APPROVED all {len(audited_creatives)} creatives on pass #{rev + 1} "
+                    f"(Metacognitive Confidence={confidence_info['confidence_score']:.2f}). Routing -> hitl_approval_gate."
                 ),
                 duration_ms=elapsed_ms,
                 cost_usd=0.003,
-                metadata={"compliance_passed": True, "revision_count": rev},
+                metadata={
+                    "compliance_passed": True,
+                    "revision_count": rev,
+                    "confidence_score": confidence_info["confidence_score"],
+                },
             )
             return Command(
                 goto="hitl_approval_gate",
@@ -387,6 +414,7 @@ class AdAizOrchestrator:
                     "creatives": audited_creatives,
                     "compliance_status": "approved",
                     "compliance_feedback": feedback,
+                    "metacognition": metacognition_report,
                     "trace_events": [event],
                 },
             )
@@ -402,7 +430,12 @@ class AdAizOrchestrator:
             ),
             duration_ms=elapsed_ms,
             cost_usd=0.003,
-            metadata={"compliance_passed": False, "revision_count": rev + 1, "feedback": feedback},
+            metadata={
+                "compliance_passed": False,
+                "revision_count": rev + 1,
+                "feedback": feedback,
+                "confidence_score": confidence_info["confidence_score"],
+            },
         )
         return Command(
             goto="revision_coordinator_node",
@@ -411,6 +444,7 @@ class AdAizOrchestrator:
                 "compliance_status": "rejected",
                 "compliance_feedback": feedback,
                 "revision_count": rev + 1,
+                "metacognition": metacognition_report,
                 "trace_events": [event],
             },
         )
