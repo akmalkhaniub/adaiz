@@ -60,6 +60,10 @@
           class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
           4-Gate Evaluations & Reliability
         </button>
+        <button onclick="switchTab('analytics')" id="tab-btn-analytics"
+          class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+          Attribution & ROAS Insights
+        </button>
       </nav>
 
       <!-- System Status, RBAC Role Switcher & Theme Toggle -->
@@ -516,6 +520,58 @@
       </div>
     </section>
 
+    <!-- ===================================================================== -->
+    <!-- TAB 4: OMNICHANNEL ATTRIBUTION, SHAPLEY MTA & ROAS INSIGHTS           -->
+    <!-- ===================================================================== -->
+    <section id="tab-view-analytics" class="hidden space-y-6">
+      <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <h2 class="text-xl font-bold">Omnichannel Shapley Multi-Touch Attribution & Incrementality Mart</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+              OLAP Gold Mart comparing Shapley-Value Multi-Touch Attribution vs. Naïve Last-Touch across CTV, DOOH, Video, and Display.
+            </p>
+          </div>
+          <span id="attr-model-badge" class="text-xs px-3 py-1.5 rounded-xl font-mono bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+            Shapley MTA + Geo-Holdout Lift
+          </span>
+        </div>
+
+        <!-- Executive Insight Banner -->
+        <div id="attr-executive-banner" class="p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-900 dark:text-emerald-200 font-medium"></div>
+
+        <!-- Attribution Summary KPIs -->
+        <div id="attr-summary-kpis" class="grid grid-cols-2 lg:grid-cols-5 gap-4"></div>
+
+        <!-- Conversion Funnel + Shapley Channel Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-4 space-y-3">
+            <h3 class="text-base font-bold">Omnichannel Conversion Funnel</h3>
+            <div id="attr-funnel-cards" class="space-y-2.5"></div>
+          </div>
+          <div class="lg:col-span-8 space-y-3">
+            <h3 class="text-base font-bold">Shapley Multi-Touch vs. Last-Touch Channel Credit & ROAS</h3>
+            <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-900/90 uppercase text-slate-500">
+                  <tr>
+                    <th class="py-3 px-3.5">Channel & Funnel Role</th>
+                    <th class="py-3 px-3.5 text-right">Spend</th>
+                    <th class="py-3 px-3.5 text-right">Last-Touch</th>
+                    <th class="py-3 px-3.5 text-right">Shapley MTA</th>
+                    <th class="py-3 px-3.5 text-right">Holdout Lift</th>
+                    <th class="py-3 px-3.5 text-right">Conversions</th>
+                    <th class="py-3 px-3.5 text-right">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody id="attr-channel-tbody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <script>
@@ -549,7 +605,7 @@
     // Tab Switching
     // -----------------------------------------------------------------------
     function switchTab(tab) {
-      ['studio', 'vault', 'evals'].forEach(t => {
+      ['studio', 'vault', 'evals', 'analytics'].forEach(t => {
         const view = document.getElementById(`tab-view-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         if (t === tab) {
@@ -565,7 +621,66 @@
         runVaultSearch();
       } else if (tab === 'evals') {
         loadLatestEvals();
+      } else if (tab === 'analytics') {
+        loadAttributionAnalytics();
       }
+    }
+
+    async function loadAttributionAnalytics() {
+      if (!CURRENT_CAMPAIGN_ID) return;
+      const res = await fetch(`/api/v1/campaigns/${CURRENT_CAMPAIGN_ID}/attribution`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const k = data.summary_kpis || {};
+
+      document.getElementById('attr-executive-banner').textContent = `📊 ${data.executive_insight || ''}`;
+      document.getElementById('attr-summary-kpis').innerHTML = `
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div class="text-xs text-slate-500">Total Media Spend</div>
+          <div class="text-lg font-bold font-mono mt-1">$${(k.total_media_spend_usd || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div class="text-xs text-slate-500">Attributed Revenue</div>
+          <div class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">$${(k.total_attributed_revenue_usd || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div class="text-xs text-slate-500">Blended ROAS</div>
+          <div class="text-lg font-bold font-mono text-indigo-600 dark:text-indigo-400 mt-1">${k.blended_roas || 0}x</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div class="text-xs text-slate-500">Verified Conversions</div>
+          <div class="text-lg font-bold font-mono mt-1">${(k.total_conversions || 0).toLocaleString()} <span class="text-xs font-normal text-slate-400">($${k.blended_cpa_usd} CPA)</span></div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div class="text-xs text-slate-500">Holdout Incrementality Lift</div>
+          <div class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">+${k.incremental_lift_vs_holdout_pct || 0}%</div>
+        </div>
+      `;
+
+      document.getElementById('attr-funnel-cards').innerHTML = (data.conversion_funnel || []).map(f => `
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-xs">
+          <div>
+            <div class="font-bold text-slate-800 dark:text-slate-200">${f.stage}</div>
+            <div class="text-slate-500">Stage Retention: ${f.rate_pct}%</div>
+          </div>
+          <span class="font-mono font-bold text-sm text-indigo-600 dark:text-indigo-400">${f.count.toLocaleString()}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('attr-channel-tbody').innerHTML = (data.channel_breakdown || []).map(c => `
+        <tr>
+          <td class="py-3 px-3.5">
+            <div class="font-bold uppercase text-indigo-600 dark:text-indigo-400">${c.channel}</div>
+            <div class="text-[11px] text-slate-500">${c.role}</div>
+          </td>
+          <td class="py-3 px-3.5 text-right font-mono">$${c.allocated_spend_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-3 px-3.5 text-right font-mono text-slate-500">${(c.last_touch_weight * 100).toFixed(1)}%</td>
+          <td class="py-3 px-3.5 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">${(c.shapley_credit_weight * 100).toFixed(1)}%</td>
+          <td class="py-3 px-3.5 text-right font-mono text-emerald-600 dark:text-emerald-400">+${c.incremental_lift_pct}%</td>
+          <td class="py-3 px-3.5 text-right font-mono">${c.attributed_conversions.toLocaleString()}</td>
+          <td class="py-3 px-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">${c.channel_roas}x</td>
+        </tr>
+      `).join('');
     }
 
     // -----------------------------------------------------------------------

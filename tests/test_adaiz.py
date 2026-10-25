@@ -317,5 +317,17 @@ def test_fastapi_operator_console_and_hitl_api_contracts() -> None:
         assert cand_block_res.status_code == 200
         assert cand_block_res.json()["ci_cd_verdict"] == "BLOCK_DEPLOY_REGRESSION"
 
+        # 14. REQ-ANALYTICS-01: Omnichannel Shapley Multi-Touch Attribution & ROAS Mart
+        attr_res = client.get("/api/v1/campaigns/api_test_camp_01/attribution")
+        assert attr_res.status_code == 200
+        attr_data = attr_res.json()
+        breakdown = attr_data["channel_breakdown"]
+        assert len(breakdown) == 3
+        assert round(sum(c["shapley_credit_weight"] for c in breakdown), 4) == 1.0
+        assert round(sum(c["last_touch_weight"] for c in breakdown), 4) == 1.0
+        assert attr_data["summary_kpis"]["blended_roas"] > 2.5
+        assert len(attr_data["conversion_funnel"]) == 4
+
+
 
 

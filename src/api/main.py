@@ -28,6 +28,7 @@ from evals.run_evals import (
     run_all_evaluation_gates,
     run_candidate_regression_comparison,
 )
+from src.graph.attribution_engine import OmnichannelAttributionEngine
 from src.graph.insights_agent import CampaignInsightsAndSagaAgent
 from src.graph.rfp_agent import SAMPLE_RFP_EMAILS, SalesRFPIntakeAgent
 from src.graph.state import CampaignBrief, ChannelType, CreativeAsset
@@ -162,14 +163,15 @@ async def lifespan(app: FastAPI):
     app.state.llm_gateway = ModelCascadeGateway()
     app.state.rfp_agent = SalesRFPIntakeAgent(gateway=app.state.llm_gateway)
     app.state.insights_agent = CampaignInsightsAndSagaAgent()
+    app.state.attribution_engine = OmnichannelAttributionEngine()
     app.state.last_eval_report = run_all_evaluation_gates()
     yield
 
 
 app = FastAPI(
     title="AdAiz — Agentic Advertising Platform",
-    version="2.6.0",
-    description="Multi-Agent LangGraph Orchestrator with AdCP over MCP, Sales RFP Intake, Agent Harness, SQLite WAL Persistence, Post-Launch Saga Optimizer, and 4-Gate Evaluations.",
+    version="3.0.0",
+    description="Multi-Agent LangGraph Orchestrator with AdCP over MCP, Sales RFP Intake, Agent Harness, SQLite WAL Persistence, Post-Launch Saga Optimizer, Shapley Attribution, and 4-Gate Evaluations.",
     lifespan=lifespan,
 )
 
@@ -334,6 +336,24 @@ async def get_campaign_checkpoints(campaign_id: str) -> dict[str, Any]:
     orchestrator: AdAizOrchestrator = app.state.orchestrator
     history = orchestrator.get_checkpoint_history(campaign_id)
     return {"campaign_id": campaign_id, "checkpoints": history}
+
+
+@app.get("/api/v1/campaigns/{campaign_id}/attribution")
+async def get_campaign_attribution_analytics(campaign_id: str) -> dict[str, Any]:
+    """
+    REQ-ANALYTICS-01: Compute Shapley Multi-Touch Attribution, Channel ROAS, CPA,
+    Holdout Incrementality Lift, and 7-Day Conversion Funnel for a campaign.
+    """
+    orchestrator: AdAizOrchestrator = app.state.orchestrator
+    db: SQLitePersistenceManager = app.state.db
+    attr_engine: OmnichannelAttributionEngine = app.state.attribution_engine
+
+    state_values = orchestrator.get_campaign_state(campaign_id)
+    serialized = _serialize_state(state_values) if state_values else db.load_campaign_snapshot(campaign_id)
+    if not serialized:
+        raise HTTPException(status_code=404, detail=f"Campaign '{campaign_id}' not found.")
+
+    return attr_engine.compute_campaign_attribution(serialized)
 
 
 @app.post("/api/v1/campaigns/{campaign_id}/fork")

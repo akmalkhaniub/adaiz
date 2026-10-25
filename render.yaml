@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: adaiz-agentic-advertising
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ADAIZ_APPROVAL_HMAC_SECRET
+        generateValue: true

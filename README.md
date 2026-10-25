@@ -45,3 +45,6 @@ Open **`http://localhost:8000`** to access the **AdAiz Agency Operator Console**
 | **`REQ-ORCH-02`** | LangGraph Time-Travel Checkpoint Timeline (`get_state_history`) & State Forking | `src/graph/workflow.py` | `/checkpoints` & `/fork` |
 | **`REQ-EVAL-02`** | Interactive Prompt & Config Version Regression Lab (`ALLOW_DEPLOY` vs `BLOCK_DEPLOY_REGRESSION`) | `evals/run_evals.py` | `/api/v1/evals/compare-candidate` |
 | **`REQ-FINOPS-01`** | Role-Based Access Control (`RBAC`: `media_director` vs `media_planner` vs `compliance_auditor`) | `src/harness/executor.py` | HTTP 403 RBAC Live-Spend Guard |
+| **`REQ-ANALYTICS-01`** | OLAP Gold Mart Omnichannel Shapley Multi-Touch Attribution, Channel ROAS & Holdout Incrementality | `src/graph/attribution_engine.py` | `/api/v1/campaigns/{id}/attribution` |
+| **`REQ-ARCH-01`** | Staff-Level Architecture & Technical Interview Defense Playbook | `ARCHITECTURE_AND_INTERVIEW_GUIDE.md` | ADRs & Trade-Off Matrix |
+| **`REQ-CLOUD-01`** | One-Click Cloud Deployment Manifests (`Render`, `Railway`, `Fly.io`, `Docker`) | `render.yaml`, `railway.json`, `fly.toml` | Container & Health Probe |
